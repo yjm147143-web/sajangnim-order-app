@@ -144,6 +144,55 @@
     });
   }
 
+  // ---------------- 권한 잠금 비밀번호 확인 (직원 계정 전용 게이트) ----------------
+  // storeId에 권한 잠금 비밀번호가 설정되어 있지 않으면 onSuccess를 바로 호출한다.
+  // 설정되어 있으면 비밀번호 확인 모달을 띄우고, 정답을 입력해야만 onSuccess를 호출한다.
+  function requirePasswordGate(storeId, label, onSuccess) {
+    const status = window.MockApi.getPermissionLockStatus(storeId);
+    if (!status.isSet) { onSuccess(); return; }
+    const host = document.getElementById('modal-host');
+    host.innerHTML =
+      '<div class="modal-overlay" id="lock-gate-modal">' +
+        '<div class="modal-card">' +
+          '<div style="font-size:28px;text-align:center;margin-bottom:6px;">🔒</div>' +
+          '<div class="modal-title">' + escapeHtml(label) + '</div>' +
+          '<div class="modal-message">사장님이 잠근 기능이에요.<br/>계속하려면 비밀번호를 입력해주세요.</div>' +
+          '<input type="password" class="input-field" id="lock-gate-input" maxlength="12" placeholder="비밀번호" style="text-align:center;letter-spacing:4px;margin-bottom:6px;" />' +
+          '<div class="input-error" id="lock-gate-error" style="min-height:16px;margin-bottom:10px;"></div>' +
+          '<div class="btn-row" style="flex-direction:column;gap:8px;">' +
+            '<button type="button" class="btn btn-primary" id="lock-gate-confirm">확인</button>' +
+            '<button type="button" class="btn btn-secondary" id="lock-gate-cancel">취소</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    requestAnimationFrame(function () { document.getElementById('lock-gate-modal').classList.add('show'); });
+    const input = document.getElementById('lock-gate-input');
+    input.focus();
+
+    function close() { host.innerHTML = ''; }
+    document.getElementById('lock-gate-cancel').addEventListener('click', close);
+    document.getElementById('lock-gate-modal').addEventListener('click', function (e) {
+      if (e.target.id === 'lock-gate-modal') close();
+    });
+    function attempt() {
+      if (window.MockApi.verifyPermissionLockPassword(storeId, input.value)) {
+        close();
+        onSuccess();
+      } else {
+        input.classList.add('error');
+        document.getElementById('lock-gate-error').textContent = '비밀번호가 올바르지 않아요.';
+        input.value = '';
+        input.focus();
+      }
+    }
+    document.getElementById('lock-gate-confirm').addEventListener('click', attempt);
+    input.addEventListener('keydown', function (e) { if (e.key === 'Enter') attempt(); });
+    input.addEventListener('input', function () {
+      input.classList.remove('error');
+      document.getElementById('lock-gate-error').textContent = '';
+    });
+  }
+
   // ---------------- Bottom Sheet ----------------
   function showBottomSheet(innerHtml, onMount) {
     const host = document.getElementById('modal-host');
@@ -222,6 +271,7 @@
     bucketKeyOf: bucketKeyOf, bucketLabel: bucketLabel, groupByBucket: groupByBucket,
     channelBadgeHtml: channelBadgeHtml, operatingStatusMeta: operatingStatusMeta, statusPillHtml: statusPillHtml,
     toast: toast, showModal: showModal, closeModal: closeModal, confirmModal: confirmModal, showBottomSheet: showBottomSheet,
+    requirePasswordGate: requirePasswordGate,
     barChartHtml: barChartHtml, donutChartHtml: donutChartHtml, rankListHtml: rankListHtml, salesChartHtml: salesChartHtml,
   };
 })();

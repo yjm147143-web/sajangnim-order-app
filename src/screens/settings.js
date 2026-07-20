@@ -99,16 +99,24 @@
   }
 
   function mount(root) {
-    var storeId = currentStoreId();
+    var user = window.MockApi.getCurrentUser();
+    var storeId = user.storeId;
 
     function bindListEvents(wrap) {
       wrap.querySelectorAll('[data-status-action]').forEach(function (btn) {
         btn.addEventListener('click', function (e) {
           e.stopPropagation();
           var newStatus = btn.getAttribute('data-status-action');
-          window.MockApi.updateOperatingStatus(storeId, newStatus);
-          window.UI.toast('영업 상태가 변경되었어요');
-          refresh();
+          function proceed() {
+            window.MockApi.updateOperatingStatus(storeId, newStatus);
+            window.UI.toast('영업 상태가 변경되었어요');
+            refresh();
+          }
+          if (user.role === 'STAFF') {
+            window.UI.requirePasswordGate(storeId, '영업상태 변경', proceed);
+          } else {
+            proceed();
+          }
         });
       });
 
@@ -123,9 +131,16 @@
         });
       }
 
+      var GATED_NAV = { sales: '매출 조회', staffAccounts: '직원 계정 관리' };
       wrap.querySelectorAll('[data-nav]').forEach(function (row) {
         row.addEventListener('click', function () {
-          window.Router.showScreen(row.getAttribute('data-nav'), {});
+          var target = row.getAttribute('data-nav');
+          function proceed() { window.Router.showScreen(target, {}); }
+          if (user.role === 'STAFF' && GATED_NAV[target]) {
+            window.UI.requirePasswordGate(storeId, GATED_NAV[target], proceed);
+          } else {
+            proceed();
+          }
         });
       });
 

@@ -1,7 +1,8 @@
 /*
  * 사장님 주문 접수 화면 (order)
  * 대기 / 처리중 / 완료 탭 기반의 주문 카드 보드.
- * OWNER/STAFF 공통 진입 화면 — 주문 처리는 둘 다 가능, 설정 진입은 OWNER만 가능.
+ * OWNER/STAFF 공통 진입 화면 — 주문 처리와 설정 진입 모두 둘 다 가능하나,
+ * STAFF가 반품 처리를 할 때는 사장님이 '직원 계정 관리 > 권한 잠금 설정'에서 비밀번호를 설정해둔 경우 비밀번호 확인이 필요하다.
  */
 (function () {
   const esc = window.UI.escapeHtml;
@@ -365,11 +366,18 @@
   }
 
   function handleReturn(id) {
-    openReasonModal(function (reason) {
-      const res = window.MockApi.returnOrder(id, reason);
-      window.UI.toast('카카오 알림톡 발송: ' + res.notification);
-      updateList();
-    });
+    function proceed() {
+      openReasonModal(function (reason) {
+        const res = window.MockApi.returnOrder(id, reason);
+        window.UI.toast('카카오 알림톡 발송: ' + res.notification);
+        updateList();
+      });
+    }
+    if (user.role === 'STAFF') {
+      window.UI.requirePasswordGate(storeId, '반품 처리', proceed);
+    } else {
+      proceed();
+    }
   }
 
   function doBulkAccept() {
@@ -398,7 +406,6 @@
 
   // ---------------- 설정 / 오프라인 ----------------
   function onSettingsClick() {
-    if (user.role === 'STAFF') { window.UI.toast('사장님 계정에서만 이용할 수 있어요.'); return; }
     window.Router.showScreen('settings');
   }
 

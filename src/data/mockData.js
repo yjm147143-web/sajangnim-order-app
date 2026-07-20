@@ -24,6 +24,7 @@
         id: 'store-1', eventId: 'event-1', name: '브루웍스 성수점', operatingStatus: 'OPEN', autoAcceptOrders: false,
         guideDisplayMode: 'time', cookTimeBase: 10, cookTimeMarginal: 2, cookTimeBatch: 6,
         cookHasHelper: false, cookHelperCount: 1, cookBufferMinutes: 2,
+        permissionLockPassword: null,
         statusChangedAt: minutesAgo(180), ownerName: '김사장', ownerPhone: '01012345678',
         cashSalesAmount: 84000, cashOrderCount: 6,
         todaySalesAmount: 612000, totalSalesAmount: 5480000, todayOrderCount: 58,

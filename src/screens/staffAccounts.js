@@ -1,5 +1,7 @@
 /*
  * 직원 계정 관리 화면
+ * - 권한 잠금 설정 (사장님 전용, 계정 목록 위): 비밀번호 설정 시 직원 계정으로 매출조회·영업상태변경·반품처리·
+ *   직원계정관리 진입 시 비밀번호 확인이 필요해진다. (실제 확인 로직은 UI.requirePasswordGate / settings.js / order.js에 있음)
  * - 계정 목록 (사용 여부 토글 포함)
  * - 직원 계정 생성 (바텀시트)
  */
@@ -26,6 +28,26 @@
           '<span class="toggle-knob"></span>' +
         '</button>' +
       '</div>'
+    );
+  }
+
+  function lockEntryHtml(storeId, isOwner) {
+    if (!isOwner) return '';
+    const locked = window.MockApi.getPermissionLockStatus(storeId).isSet;
+    return (
+      '<div class="lock-entry" id="lock-entry-row">' +
+        '<div class="icon">🔐</div>' +
+        '<div class="label-group">' +
+          '<div class="label-title">권한 잠금 설정</div>' +
+          '<div class="label-sub" id="lock-entry-sub">' + (locked
+            ? '비밀번호가 설정되어 있어요 · 직원은 매출 조회 · 영업상태 변경 · 반품 처리 · 직원 계정 관리 진입 시 비밀번호를 입력해야 해요'
+            : '비밀번호가 설정되지 않았어요 · 직원이 자유롭게 접근할 수 있어요') + '</div>' +
+        '</div>' +
+        '<span class="badge ' + (locked ? 'badge-danger-soft' : 'badge-neutral') + '" id="lock-entry-badge">' + (locked ? '설정됨' : '미설정') + '</span>' +
+        '<span class="chevron">›</span>' +
+      '</div>' +
+      '<div class="owner-only-note">🔒 이 항목은 <b>사장님 계정에서만</b> 보이고 설정할 수 있어요. 직원 계정으로 로그인하면 이 항목 자체가 노출되지 않아요.</div>' +
+      '<div class="divider-line"></div>'
     );
   }
 
@@ -189,6 +211,16 @@
       '.period-range-fields .input-field{flex:1;height:44px;}' +
       '.period-range-sep{color:var(--color-text-secondary);flex-shrink:0;}' +
       '.input-help-caption{font-size:var(--font-size-micro);color:var(--color-text-secondary);}' +
+      '.lock-entry{display:flex;align-items:center;gap:12px;padding:14px var(--space-5);cursor:pointer;}' +
+      '.lock-entry:active{background:var(--color-divider);}' +
+      '.lock-entry .icon{font-size:22px;width:28px;text-align:center;flex-shrink:0;}' +
+      '.lock-entry .label-group{flex:1;min-width:0;}' +
+      '.lock-entry .label-title{font-size:var(--font-size-body);font-weight:700;}' +
+      '.lock-entry .label-sub{font-size:var(--font-size-caption);color:var(--color-text-secondary);margin-top:2px;line-height:1.4;}' +
+      '.lock-entry .chevron{color:var(--color-text-secondary);flex-shrink:0;font-size:18px;margin-left:2px;}' +
+      '.owner-only-note{margin:0 var(--space-5) 0;padding:10px 12px;background:var(--color-divider);border-left:3px solid var(--color-text-primary);' +
+        'border-radius:0 10px 10px 0;font-size:var(--font-size-micro);color:var(--color-text-secondary);line-height:1.5;}' +
+      '.owner-only-note b{color:var(--color-text-primary);}' +
       '</style>' +
       '<div class="topbar">' +
         '<div class="topbar-side"><button type="button" class="icon-btn" id="staff-back-btn" aria-label="뒤로가기">←</button></div>' +
@@ -196,6 +228,7 @@
         '<div class="topbar-side"><button type="button" class="pill-btn active" id="staff-add-btn">+ 직원 추가</button></div>' +
       '</div>' +
       '<div class="screen-scroll">' +
+        lockEntryHtml(storeId, user.role === 'OWNER') +
         '<div class="section-title">계정 목록</div>' +
         '<div id="staff-list-wrap">' + renderStaffListHtml(storeId) + '</div>' +
       '</div>'
@@ -206,6 +239,81 @@
     const user = window.MockApi.getCurrentUser();
     const storeId = user.storeId;
     const listWrap = root.querySelector('#staff-list-wrap');
+
+    function refreshLockEntry() {
+      const row = root.querySelector('#lock-entry-row');
+      if (!row) return;
+      const locked = window.MockApi.getPermissionLockStatus(storeId).isSet;
+      root.querySelector('#lock-entry-sub').textContent = locked
+        ? '비밀번호가 설정되어 있어요 · 직원은 매출 조회 · 영업상태 변경 · 반품 처리 · 직원 계정 관리 진입 시 비밀번호를 입력해야 해요'
+        : '비밀번호가 설정되지 않았어요 · 직원이 자유롭게 접근할 수 있어요';
+      const badge = root.querySelector('#lock-entry-badge');
+      badge.textContent = locked ? '설정됨' : '미설정';
+      badge.classList.toggle('badge-danger-soft', locked);
+      badge.classList.toggle('badge-neutral', !locked);
+    }
+
+    function openLockSetupModal() {
+      const isSet = window.MockApi.getPermissionLockStatus(storeId).isSet;
+      const host = document.getElementById('modal-host');
+      host.innerHTML =
+        '<div class="modal-overlay" id="lock-setup-modal">' +
+          '<div class="modal-card">' +
+            '<div style="font-size:28px;text-align:center;margin-bottom:6px;">🔐</div>' +
+            '<div class="modal-title">권한 잠금 설정</div>' +
+            '<div class="modal-message">' + (isSet
+              ? '새 비밀번호를 입력하고 저장하면 기존 비밀번호가 바뀌어요.'
+              : '비밀번호를 설정하면, 직원 계정으로 매출 조회 · 영업상태 변경 · 반품 처리 · 직원 계정 관리에 들어갈 때마다 이 비밀번호를 입력해야 해요.') + '</div>' +
+            '<input type="password" class="input-field" id="lock-setup-input" maxlength="12" placeholder="새 비밀번호" style="text-align:center;letter-spacing:4px;margin-bottom:6px;" />' +
+            '<div class="input-error" id="lock-setup-error" style="min-height:16px;margin-bottom:10px;"></div>' +
+            '<div class="btn-row" style="flex-direction:column;gap:8px;">' +
+              '<button type="button" class="btn btn-primary" id="lock-setup-save">' + (isSet ? '비밀번호 변경 저장' : '저장') + '</button>' +
+              (isSet ? '<button type="button" class="btn btn-danger-text" id="lock-setup-unlock">잠금 해제</button>' : '') +
+              '<button type="button" class="btn btn-secondary" id="lock-setup-cancel">취소</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      requestAnimationFrame(function () { document.getElementById('lock-setup-modal').classList.add('show'); });
+      const input = document.getElementById('lock-setup-input');
+      input.focus();
+
+      function close() { host.innerHTML = ''; }
+      document.getElementById('lock-setup-cancel').addEventListener('click', close);
+      document.getElementById('lock-setup-modal').addEventListener('click', function (e) {
+        if (e.target.id === 'lock-setup-modal') close();
+      });
+      document.getElementById('lock-setup-save').addEventListener('click', function () {
+        const val = input.value.trim();
+        if (!val) {
+          input.classList.add('error');
+          document.getElementById('lock-setup-error').textContent = '비밀번호를 입력해주세요.';
+          return;
+        }
+        window.MockApi.setPermissionLockPassword(storeId, val);
+        close();
+        refreshLockEntry();
+        window.UI.toast(isSet ? '비밀번호를 변경했어요' : '권한 잠금을 설정했어요');
+      });
+      const unlockBtn = document.getElementById('lock-setup-unlock');
+      if (unlockBtn) {
+        unlockBtn.addEventListener('click', function () {
+          window.UI.confirmModal(
+            '잠금을 해제할까요?',
+            '해제하면 직원 계정으로 매출 조회 · 영업상태 변경 · 반품 처리 · 직원 계정 관리에 비밀번호 없이 바로 들어갈 수 있어요.',
+            '해제하기',
+            function () {
+              window.MockApi.clearPermissionLockPassword(storeId);
+              refreshLockEntry();
+              window.UI.toast('권한 잠금을 해제했어요');
+            },
+            { danger: true }
+          );
+        });
+      }
+    }
+
+    const lockRow = root.querySelector('#lock-entry-row');
+    if (lockRow) lockRow.addEventListener('click', openLockSetupModal);
 
     function bindListEvents() {
       listWrap.querySelectorAll('[data-toggle-id]').forEach(function (btn) {

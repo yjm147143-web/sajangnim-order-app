@@ -97,6 +97,31 @@
     return { url: window.AppConfig.QR_ORDER_BASE_URL + storeId, storeName: store.name };
   }
 
+  // ---------------- 권한 잠금 (직원 계정의 특정 기능 진입 시 비밀번호 요구) ----------------
+  function getPermissionLockStatus(storeId) {
+    const store = findStore(storeId);
+    return { isSet: !!store.permissionLockPassword };
+  }
+
+  function setPermissionLockPassword(storeId, password) {
+    const store = findStore(storeId);
+    store.permissionLockPassword = password;
+    persist();
+    return getPermissionLockStatus(storeId);
+  }
+
+  function clearPermissionLockPassword(storeId) {
+    const store = findStore(storeId);
+    store.permissionLockPassword = null;
+    persist();
+    return getPermissionLockStatus(storeId);
+  }
+
+  function verifyPermissionLockPassword(storeId, password) {
+    const store = findStore(storeId);
+    return store.permissionLockPassword === password;
+  }
+
   // ---------------- Menu ----------------
   function getCategories(storeId) {
     return DB.categories.filter(function (c) { return c.storeId === storeId; }).sort(function (a, b) { return a.sortOrder - b.sortOrder; });
@@ -436,6 +461,8 @@
     getCurrentUser: getCurrentUser, getAutoLogin: getAutoLogin, login: login, logout: logout,
     getStore: getStore, updateOperatingStatus: updateOperatingStatus, updateAutoAccept: updateAutoAccept,
     getCustomerGuideSettings: getCustomerGuideSettings, updateCustomerGuideSettings: updateCustomerGuideSettings, getQrMenuInfo: getQrMenuInfo,
+    getPermissionLockStatus: getPermissionLockStatus, setPermissionLockPassword: setPermissionLockPassword,
+    clearPermissionLockPassword: clearPermissionLockPassword, verifyPermissionLockPassword: verifyPermissionLockPassword,
     getCategories: getCategories, getMenuItems: getMenuItems, getMenuItem: getMenuItem,
     addMenuItem: addMenuItem, updateMenuItem: updateMenuItem, toggleSoldOut: toggleSoldOut, moveMenuItem: moveMenuItem,
     getStaffAccounts: getStaffAccounts, createStaffAccount: createStaffAccount, toggleStaffActive: toggleStaffActive,
