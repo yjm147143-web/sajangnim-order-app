@@ -22,7 +22,8 @@
     const stores = [
       {
         id: 'store-1', eventId: 'event-1', name: '브루웍스 성수점', operatingStatus: 'OPEN', autoAcceptOrders: false,
-        waitTimeGuideEnabled: true, waitTimeMenuCountUnit: 5, waitTimeMinutesPerUnit: 10, waitTimeMaxMinutes: 60,
+        guideDisplayMode: 'time', cookTimeBase: 10, cookTimeMarginal: 2, cookTimeBatch: 6,
+        cookHasHelper: false, cookHelperCount: 1, cookBufferMinutes: 2,
         statusChangedAt: minutesAgo(180), ownerName: '김사장', ownerPhone: '01012345678',
         cashSalesAmount: 84000, cashOrderCount: 6,
         todaySalesAmount: 612000, totalSalesAmount: 5480000, todayOrderCount: 58,
@@ -52,11 +53,11 @@
           ],
         },
       },
-      { id: 'store-2', eventId: 'event-1', name: '고로케 트럭', operatingStatus: 'OPEN', autoAcceptOrders: true, waitTimeGuideEnabled: false, waitTimeMenuCountUnit: 5, waitTimeMinutesPerUnit: 10, waitTimeMaxMinutes: 60, statusChangedAt: minutesAgo(240), ownerName: '정사장', ownerPhone: '01022223333', cashSalesAmount: 156000, cashOrderCount: 11, todaySalesAmount: 470000, totalSalesAmount: 4700000, todayOrderCount: 62 },
-      { id: 'store-3', eventId: 'event-1', name: '타코야끼 부스', operatingStatus: 'OPEN', autoAcceptOrders: false, waitTimeGuideEnabled: true, waitTimeMenuCountUnit: 4, waitTimeMinutesPerUnit: 8, waitTimeMaxMinutes: 50, statusChangedAt: minutesAgo(200), ownerName: '한사장', ownerPhone: '01044445555', cashSalesAmount: 32000, cashOrderCount: 3, todaySalesAmount: 312000, totalSalesAmount: 2100000, todayOrderCount: 41 },
-      { id: 'store-4', eventId: 'event-1', name: '크래프트비어 하우스', operatingStatus: 'OPEN', autoAcceptOrders: false, waitTimeGuideEnabled: false, waitTimeMenuCountUnit: 5, waitTimeMinutesPerUnit: 10, waitTimeMaxMinutes: 60, statusChangedAt: minutesAgo(95), lastOrderAt: minutesAgo(95), ownerName: '윤사장', ownerPhone: '01055556666', cashSalesAmount: 210000, cashOrderCount: 9, todaySalesAmount: 588000, totalSalesAmount: 3300000, todayOrderCount: 38 },
-      { id: 'store-5', eventId: 'event-1', name: '떡볶이 포차', operatingStatus: 'CLOSED', autoAcceptOrders: true, waitTimeGuideEnabled: false, waitTimeMenuCountUnit: 5, waitTimeMinutesPerUnit: 10, waitTimeMaxMinutes: 60, statusChangedAt: minutesAgo(45), ownerName: '서사장', ownerPhone: '01066667777', cashSalesAmount: 40000, cashOrderCount: 4, todaySalesAmount: 198000, totalSalesAmount: 1500000, todayOrderCount: 25 },
-      { id: 'store-6', eventId: 'event-1', name: '핫도그 트럭', operatingStatus: 'PAUSED', autoAcceptOrders: false, waitTimeGuideEnabled: false, waitTimeMenuCountUnit: 5, waitTimeMinutesPerUnit: 10, waitTimeMaxMinutes: 60, statusChangedAt: minutesAgo(15), ownerName: '문사장', ownerPhone: '01077778888', cashSalesAmount: 18000, cashOrderCount: 2, todaySalesAmount: 122000, totalSalesAmount: 980000, todayOrderCount: 16 },
+      { id: 'store-2', eventId: 'event-1', name: '고로케 트럭', operatingStatus: 'OPEN', autoAcceptOrders: true, guideDisplayMode: 'queue', cookTimeBase: 8, cookTimeMarginal: 1, cookTimeBatch: 8, cookHasHelper: true, cookHelperCount: 1, cookBufferMinutes: 2, statusChangedAt: minutesAgo(240), ownerName: '정사장', ownerPhone: '01022223333', cashSalesAmount: 156000, cashOrderCount: 11, todaySalesAmount: 470000, totalSalesAmount: 4700000, todayOrderCount: 62 },
+      { id: 'store-3', eventId: 'event-1', name: '타코야끼 부스', operatingStatus: 'OPEN', autoAcceptOrders: false, guideDisplayMode: 'time', cookTimeBase: 6, cookTimeMarginal: 1, cookTimeBatch: 12, cookHasHelper: false, cookHelperCount: 1, cookBufferMinutes: 1, statusChangedAt: minutesAgo(200), ownerName: '한사장', ownerPhone: '01044445555', cashSalesAmount: 32000, cashOrderCount: 3, todaySalesAmount: 312000, totalSalesAmount: 2100000, todayOrderCount: 41 },
+      { id: 'store-4', eventId: 'event-1', name: '크래프트비어 하우스', operatingStatus: 'OPEN', autoAcceptOrders: false, guideDisplayMode: 'time', cookTimeBase: 5, cookTimeMarginal: 1, cookTimeBatch: 4, cookHasHelper: false, cookHelperCount: 1, cookBufferMinutes: 2, statusChangedAt: minutesAgo(95), lastOrderAt: minutesAgo(95), ownerName: '윤사장', ownerPhone: '01055556666', cashSalesAmount: 210000, cashOrderCount: 9, todaySalesAmount: 588000, totalSalesAmount: 3300000, todayOrderCount: 38 },
+      { id: 'store-5', eventId: 'event-1', name: '떡볶이 포차', operatingStatus: 'CLOSED', autoAcceptOrders: true, guideDisplayMode: 'queue', cookTimeBase: 10, cookTimeMarginal: 2, cookTimeBatch: 6, cookHasHelper: false, cookHelperCount: 1, cookBufferMinutes: 2, statusChangedAt: minutesAgo(45), ownerName: '서사장', ownerPhone: '01066667777', cashSalesAmount: 40000, cashOrderCount: 4, todaySalesAmount: 198000, totalSalesAmount: 1500000, todayOrderCount: 25 },
+      { id: 'store-6', eventId: 'event-1', name: '핫도그 트럭', operatingStatus: 'PAUSED', autoAcceptOrders: false, guideDisplayMode: 'time', cookTimeBase: 7, cookTimeMarginal: 2, cookTimeBatch: 5, cookHasHelper: false, cookHelperCount: 1, cookBufferMinutes: 3, statusChangedAt: minutesAgo(15), ownerName: '문사장', ownerPhone: '01077778888', cashSalesAmount: 18000, cashOrderCount: 2, todaySalesAmount: 122000, totalSalesAmount: 980000, todayOrderCount: 16 },
     ];
 
     const categories = [

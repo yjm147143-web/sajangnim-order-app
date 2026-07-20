@@ -66,23 +66,30 @@
     return store;
   }
 
-  function updateWaitTimeSettings(storeId, payload) {
+  function getCustomerGuideSettings(storeId) {
     const store = findStore(storeId);
-    Object.assign(store, payload);
-    persist();
-    return store;
+    return {
+      displayMode: store.guideDisplayMode || 'time',
+      cookTimeBase: store.cookTimeBase != null ? store.cookTimeBase : 10,
+      cookTimeMarginal: store.cookTimeMarginal != null ? store.cookTimeMarginal : 2,
+      cookTimeBatch: store.cookTimeBatch != null ? store.cookTimeBatch : 6,
+      hasHelper: !!store.cookHasHelper,
+      helperCount: store.cookHelperCount != null ? store.cookHelperCount : 1,
+      bufferMinutes: store.cookBufferMinutes != null ? store.cookBufferMinutes : 2,
+    };
   }
 
-  function getEstimatedWaitInfo(storeId) {
+  function updateCustomerGuideSettings(storeId, payload) {
     const store = findStore(storeId);
-    const pendingQty = DB.orders
-      .filter(function (o) { return o.storeId === storeId && (o.status === 'WAITING' || o.status === 'PROCESSING') && !o.canceled; })
-      .reduce(function (sum, o) { return sum + o.items.reduce(function (s, it) { return s + it.quantity; }, 0); }, 0);
-    const n = store.waitTimeMenuCountUnit || 5;
-    const m = store.waitTimeMinutesPerUnit || 10;
-    const raw = Math.ceil(pendingQty / n) * m;
-    const capped = store.waitTimeMaxMinutes && raw > store.waitTimeMaxMinutes;
-    return { pendingQty: pendingQty, rawMinutes: raw, minutes: capped ? store.waitTimeMaxMinutes : raw, capped: capped };
+    if (payload.displayMode !== undefined) store.guideDisplayMode = payload.displayMode;
+    if (payload.cookTimeBase !== undefined) store.cookTimeBase = payload.cookTimeBase;
+    if (payload.cookTimeMarginal !== undefined) store.cookTimeMarginal = payload.cookTimeMarginal;
+    if (payload.cookTimeBatch !== undefined) store.cookTimeBatch = payload.cookTimeBatch;
+    if (payload.hasHelper !== undefined) store.cookHasHelper = payload.hasHelper;
+    if (payload.helperCount !== undefined) store.cookHelperCount = payload.helperCount;
+    if (payload.bufferMinutes !== undefined) store.cookBufferMinutes = payload.bufferMinutes;
+    persist();
+    return getCustomerGuideSettings(storeId);
   }
 
   function getQrMenuInfo(storeId) {
@@ -428,7 +435,7 @@
   window.MockApi = {
     getCurrentUser: getCurrentUser, getAutoLogin: getAutoLogin, login: login, logout: logout,
     getStore: getStore, updateOperatingStatus: updateOperatingStatus, updateAutoAccept: updateAutoAccept,
-    updateWaitTimeSettings: updateWaitTimeSettings, getEstimatedWaitInfo: getEstimatedWaitInfo, getQrMenuInfo: getQrMenuInfo,
+    getCustomerGuideSettings: getCustomerGuideSettings, updateCustomerGuideSettings: updateCustomerGuideSettings, getQrMenuInfo: getQrMenuInfo,
     getCategories: getCategories, getMenuItems: getMenuItems, getMenuItem: getMenuItem,
     addMenuItem: addMenuItem, updateMenuItem: updateMenuItem, toggleSoldOut: toggleSoldOut, moveMenuItem: moveMenuItem,
     getStaffAccounts: getStaffAccounts, createStaffAccount: createStaffAccount, toggleStaffActive: toggleStaffActive,
