@@ -33,10 +33,9 @@
     '#bulk-bar-slot:empty { display: none; }';
 
   // ---------------- 탭 구성 ----------------
+  // 대기 탭은 자동수락 여부(ON/OFF)와 무관하게 항상 노출한다.
+  // 자동수락 ON이면 신규 주문이 처리중 탭으로 바로 인입, OFF면 대기 탭으로 인입되는 차이만 있다.
   function computeTabs() {
-    if (store.autoAcceptOrders) {
-      return [{ status: 'PROCESSING', label: '처리중' }, { status: 'DONE', label: '완료' }];
-    }
     return [{ status: 'WAITING', label: '대기' }, { status: 'PROCESSING', label: '처리중' }, { status: 'DONE', label: '완료' }];
   }
 

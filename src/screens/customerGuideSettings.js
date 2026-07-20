@@ -305,7 +305,7 @@
 
     // ---------- 이벤트 바인딩 ----------
     root.querySelector('#cg-back-btn').addEventListener('click', function () {
-      window.Router.showScreen('settings');
+      window.Router.back();
     });
 
     root.querySelectorAll('#mode-select .mode-select-btn').forEach(function (btn) {

@@ -41,7 +41,7 @@
         '<div class="login-actions">' +
           '<button type="button" class="btn btn-primary" id="login-submit">로그인</button>' +
           '<div class="login-find-row">' +
-            '<button type="button" class="btn-text" id="login-find">아이디 · 비밀번호 찾기</button>' +
+            '<button type="button" class="btn btn-text" id="login-find">아이디 · 비밀번호 찾기</button>' +
           '</div>' +
         '</div>' +
       '</div>'
@@ -53,18 +53,22 @@
     const pwErr = root.querySelector('#login-pw-error');
     idErr.style.display = 'none'; idErr.textContent = '';
     pwErr.style.display = 'none'; pwErr.textContent = '';
+    root.querySelector('#login-id').classList.remove('error');
+    root.querySelector('#login-pw').classList.remove('error');
   }
 
   function showIdError(root, msg) {
     const el = root.querySelector('#login-id-error');
     el.textContent = msg;
     el.style.display = 'block';
+    root.querySelector('#login-id').classList.add('error');
   }
 
   function showPwError(root, msg) {
     const el = root.querySelector('#login-pw-error');
     el.textContent = msg;
     el.style.display = 'block';
+    root.querySelector('#login-pw').classList.add('error');
   }
 
   function mount(root) {

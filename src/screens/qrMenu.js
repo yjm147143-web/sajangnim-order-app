@@ -52,7 +52,7 @@
     root.querySelector('#qr-content').innerHTML = contentHtml(info);
 
     root.querySelector('#qr-back').addEventListener('click', function () {
-      window.Router.showScreen('settings', {});
+      window.Router.back();
     });
 
     root.querySelector('#copy-link-btn').addEventListener('click', function () {

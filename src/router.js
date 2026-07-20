@@ -30,8 +30,8 @@
   function back() {
     if (stack.length <= 1) return;
     stack.pop();
-    const prev = stack.pop();
-    showScreen(prev.name, prev.params);
+    const prev = stack[stack.length - 1];
+    showScreen(prev.name, prev.params, { replace: true });
   }
 
   function resetTo(name, params) {

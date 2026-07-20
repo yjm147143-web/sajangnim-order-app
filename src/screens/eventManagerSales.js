@@ -24,6 +24,15 @@
     return '<div class="empty-state"><div class="empty-state-emoji">📭</div><div>데이터가 없어요</div></div>';
   }
 
+  function listRowHtml(name, amount, extraClass) {
+    return (
+      '<div class="sales-list-row">' +
+        '<div class="sales-list-name">' + window.UI.escapeHtml(name) + '</div>' +
+        '<span class="sales-list-amount' + (extraClass ? ' ' + extraClass : '') + '">' + window.UI.formatMoney(amount) + '</span>' +
+      '</div>'
+    );
+  }
+
   function periodFilterHtml(preset) {
     return '<div class="date-range-bar" id="detail-period-filter">' + PERIOD_PRESETS.map(function (o) {
       return '<button type="button" class="pill-btn' + (preset === o.key ? ' active' : '') + '" data-preset="' + o.key + '">' + o.label + '</button>';
@@ -53,7 +62,24 @@
     }
     if (key === 'period') {
       const data = window.MockApi.getEventSalesByPeriod(eventId, preset);
-      return periodFilterHtml(preset) + '<div id="detail-chart-slot">' + (data.length ? '<div class="chart-card">' + window.UI.barChartHtml(data) + '</div>' : emptyHtml()) + '</div>';
+      if (!data.length) return periodFilterHtml(preset) + '<div id="detail-chart-slot">' + emptyHtml() + '</div>';
+      let maxItem = null, minItem = null;
+      data.forEach(function (d) {
+        if (!maxItem || d.amount > maxItem.amount) maxItem = d;
+        if (!minItem || d.amount < minItem.amount) minItem = d;
+      });
+      const showHighlight = data.length > 1 && maxItem !== minItem;
+      const rows = data.map(function (d) {
+        let cls = '';
+        if (showHighlight && d === maxItem) cls = 'sales-amount-max';
+        else if (showHighlight && d === minItem) cls = 'sales-amount-min';
+        return listRowHtml(d.name, d.amount, cls);
+      }).join('');
+      return periodFilterHtml(preset) + '<div id="detail-chart-slot">' +
+        '<div class="chart-card">' + window.UI.barChartHtml(data) + '</div>' +
+        '<div class="section-title">일자별 매출<span class="sales-legend-hint"> · <span class="sales-amount-max">최고</span> / <span class="sales-amount-min">최저</span></span></div>' +
+        '<div class="sales-list">' + rows + '</div>' +
+      '</div>';
     }
     if (key === 'menu') {
       const data = window.MockApi.getEventSalesByMenu(eventId);
@@ -61,7 +87,11 @@
     }
     if (key === 'hour') {
       const data = window.MockApi.getEventSalesByHour(eventId);
-      return data.length ? '<div class="chart-card">' + window.UI.barChartHtml(data) + '</div>' : emptyHtml();
+      if (!data.length) return emptyHtml();
+      const rows = data.map(function (d) { return listRowHtml(d.name, d.amount); }).join('');
+      return '<div class="chart-card">' + window.UI.barChartHtml(data) + '</div>' +
+        '<div class="section-title">시간대별 상세</div>' +
+        '<div class="sales-list">' + rows + '</div>';
     }
     if (key === 'channel') {
       const data = window.MockApi.getEventSalesByChannel(eventId).slice().sort(function (a, b) { return b.amount - a.amount; });
@@ -96,6 +126,14 @@
         '.sales-detail-overlay{position:absolute;inset:0;background:var(--color-bg);z-index:60;display:none;flex-direction:column;}' +
         '.sales-detail-overlay.show{display:flex;}' +
         '.channel-ratio-row{padding:0 20px 20px;font-size:var(--font-size-caption);color:var(--color-text-secondary);font-weight:700;}' +
+        '.sales-list{padding:0 var(--space-5) var(--space-5);display:flex;flex-direction:column;}' +
+        '.sales-list-row{display:flex;align-items:center;justify-content:space-between;padding:var(--space-3) 0;border-bottom:1px solid var(--color-divider);}' +
+        '.sales-list-row:last-child{border-bottom:none;}' +
+        '.sales-list-name{font-size:var(--font-size-body);font-weight:600;}' +
+        '.sales-list-amount{font-size:var(--font-size-body);font-weight:700;}' +
+        '.sales-amount-max{color:var(--color-accent-green);}' +
+        '.sales-amount-min{color:var(--color-accent-red);}' +
+        '.sales-legend-hint{font-size:var(--font-size-caption);font-weight:600;}' +
       '</style>' +
       '<div class="topbar"><div class="topbar-side"></div><div class="topbar-title">매출 현황</div><div class="topbar-side"></div></div>' +
       '<div class="screen-scroll">' +

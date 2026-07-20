@@ -218,7 +218,7 @@
   }
 
   // ---------------- Chart: Donut (SVG) ----------------
-  const DONUT_COLORS = ['#111111', '#6b7684', '#e5e8eb', '#3182f6'];
+  const DONUT_COLORS = ['#111111', '#6b7684', '#f5a623', '#3182f6'];
   function donutChartHtml(data) {
     const total = data.reduce(function (s, d) { return s + d.amount; }, 0) || 1;
     let acc = 0;

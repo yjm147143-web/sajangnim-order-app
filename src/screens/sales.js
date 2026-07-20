@@ -218,7 +218,7 @@
 
     function bindHub() {
       view.querySelector('#sales-hub-back').addEventListener('click', function () {
-        window.Router.showScreen('settings');
+        window.Router.back();
       });
       view.querySelectorAll('[data-detail]').forEach(function (el) {
         el.addEventListener('click', function () {

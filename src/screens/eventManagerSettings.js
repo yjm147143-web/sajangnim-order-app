@@ -64,8 +64,10 @@
     const logoutBtn = root.querySelector('#logout-btn');
     if (logoutBtn) {
       logoutBtn.addEventListener('click', function () {
-        window.MockApi.logout();
-        window.Router.resetTo('login');
+        window.UI.confirmModal('로그아웃', '정말 로그아웃 하시겠어요?', '로그아웃', function () {
+          window.MockApi.logout();
+          window.Router.resetTo('login');
+        }, { danger: true });
       });
     }
   }

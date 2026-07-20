@@ -108,7 +108,7 @@
     }
 
     root.querySelector('#menu-back').addEventListener('click', function () {
-      window.Router.showScreen('settings', {});
+      window.Router.back();
     });
     root.querySelector('#menu-add-btn').addEventListener('click', function () {
       window.Router.showScreen('menuEdit', {});
@@ -322,11 +322,11 @@
       window.UI.showModal({
         title: '자동 품절 처리',
         message: '재고가 모두 소진되어 자동으로 품절 처리되었어요',
-        buttons: [{ label: '확인', variant: 'btn-primary', onClick: function () { window.Router.showScreen('menuManagement', {}); } }],
+        buttons: [{ label: '확인', variant: 'btn-primary', onClick: function () { window.Router.back(); } }],
       });
     } else {
       window.UI.toast('저장되었어요');
-      window.Router.showScreen('menuManagement', {});
+      window.Router.back();
     }
   }
 
@@ -455,7 +455,7 @@
     }
 
     root.querySelector('#edit-back').addEventListener('click', function () {
-      window.Router.showScreen('menuManagement', {});
+      window.Router.back();
     });
 
     root.querySelector('#f-name').addEventListener('input', function (e) { state.name = e.target.value; updatePreview(); });

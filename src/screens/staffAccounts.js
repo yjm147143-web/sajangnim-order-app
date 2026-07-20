@@ -333,7 +333,7 @@
     }
 
     root.querySelector('#staff-back-btn').addEventListener('click', function () {
-      window.Router.showScreen('settings');
+      window.Router.back();
     });
     root.querySelector('#staff-add-btn').addEventListener('click', function () {
       openCreateSheet(storeId, refreshList);

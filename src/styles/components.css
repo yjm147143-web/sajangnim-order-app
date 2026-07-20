@@ -92,7 +92,7 @@
   gap: var(--space-1);
 }
 .summary-card .summary-label { font-size: var(--font-size-body); color: var(--color-text-secondary); font-weight: 500; }
-.summary-card .summary-value { font-size: var(--font-size-display); font-weight: 800; letter-spacing: -0.5px; }
+.summary-card .summary-value { font-size: var(--font-size-display); font-weight: 800; letter-spacing: -0.5px; word-break: keep-all; }
 .summary-card .summary-value.accent-red { color: var(--color-accent-red); }
 
 .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); padding: 0 var(--space-5); }
@@ -439,9 +439,9 @@ select.input-field { appearance: none; background-image: url("data:image/svg+xml
 
 /* ---------- Chart ---------- */
 .chart-card { padding: var(--space-2) 0; }
-.bar-chart-row { display: flex; align-items: flex-end; gap: 6px; height: 120px; padding: 0 var(--space-5); }
-.bar-chart-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; height: 100%; }
-.bar-chart-bar { width: 100%; max-width: 22px; border-radius: 4px 4px 0 0; background: var(--color-disabled); }
+.bar-chart-row { display: flex; align-items: flex-end; gap: 6px; height: 120px; padding: 0 var(--space-5); overflow-x: auto; }
+.bar-chart-col { flex: 1 0 32px; min-width: 32px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; height: 100%; }
+.bar-chart-bar { width: 100%; max-width: 22px; border-radius: 4px 4px 0 0; background: var(--color-text-secondary); }
 .bar-chart-bar.max { background: var(--color-text-primary); }
 .bar-chart-label { font-size: 10px; color: var(--color-text-secondary); white-space: nowrap; }
 
@@ -458,7 +458,7 @@ select.input-field { appearance: none; background-image: url("data:image/svg+xml
 .rank-body { flex: 1; display: flex; flex-direction: column; gap: 4px; }
 .rank-name-row { display: flex; justify-content: space-between; font-size: var(--font-size-body); font-weight: 700; }
 .rank-bar-track { height: 8px; border-radius: 4px; background: var(--color-divider); overflow: hidden; }
-.rank-bar-fill { height: 100%; border-radius: 4px; background: var(--color-disabled); }
+.rank-bar-fill { height: 100%; border-radius: 4px; background: var(--color-text-secondary); }
 .rank-bar-fill.max { background: var(--color-text-primary); }
 .rank-sub { font-size: var(--font-size-micro); color: var(--color-text-secondary); }
 
