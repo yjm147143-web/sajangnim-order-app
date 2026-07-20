@@ -1,0 +1,160 @@
+/*
+ * 사장님 설정 메인 화면
+ * - 영업상태 변경 (개점/일시중지/마감)
+ * - 자동수락 여부 토글
+ * - 메뉴관리 / 예상 대기시간 / 매출조회 / 직원계정관리 / QR메뉴판 진입
+ * - 로그아웃
+ */
+(function () {
+  function currentStoreId() {
+    var user = window.MockApi.getCurrentUser();
+    return user && user.storeId;
+  }
+
+  function actionButtonsHtml(status) {
+    if (status === 'CLOSED') {
+      return '<button type="button" class="btn btn-sm btn-success" data-status-action="OPEN">개점</button>';
+    }
+    if (status === 'OPEN') {
+      return (
+        '<button type="button" class="btn btn-sm btn-warning" data-status-action="PAUSED">일시중지</button>' +
+        '<button type="button" class="btn btn-sm btn-danger-solid" data-status-action="CLOSED">마감</button>'
+      );
+    }
+    // PAUSED
+    return (
+      '<button type="button" class="btn btn-sm btn-success" data-status-action="OPEN">일시중지 해제</button>' +
+      '<button type="button" class="btn btn-sm btn-danger-solid" data-status-action="CLOSED">마감</button>'
+    );
+  }
+
+  function contentHtml(store) {
+    var autoAcceptOn = !!store.autoAcceptOrders;
+    return (
+      '<div class="settings-list-item no-toggle-click">' +
+        '<div class="icon">🏪</div>' +
+        '<div class="label-group">' +
+          '<div class="label">영업 상태</div>' +
+          window.UI.statusPillHtml(store.operatingStatus) +
+        '</div>' +
+        '<div class="settings-inline-actions">' + actionButtonsHtml(store.operatingStatus) + '</div>' +
+      '</div>' +
+
+      '<div class="settings-list-item no-toggle-click">' +
+        '<div class="icon">⚡</div>' +
+        '<div class="label-group">' +
+          '<div class="label">자동 수락</div>' +
+          '<div class="label-sub">' + (autoAcceptOn ? '신규 주문이 대기 없이 바로 접수돼요' : '신규 주문은 대기 목록에서 확인 후 접수해요') + '</div>' +
+        '</div>' +
+        '<button type="button" class="toggle' + (autoAcceptOn ? ' on' : '') + '" id="auto-accept-toggle"><span class="toggle-knob"></span></button>' +
+      '</div>' +
+
+      '<div class="divider-line"></div>' +
+
+      '<div class="settings-list-item" data-nav="menuManagement">' +
+        '<div class="icon">🍽️</div><div class="label">메뉴 추가 및 수정</div><div class="chevron">›</div>' +
+      '</div>' +
+      '<div class="settings-list-item" data-nav="waitTimeSettings">' +
+        '<div class="icon">⏱️</div><div class="label">예상 대기시간 관리</div><div class="chevron">›</div>' +
+      '</div>' +
+      '<div class="settings-list-item" data-nav="sales">' +
+        '<div class="icon">💰</div><div class="label">매출 조회</div><div class="chevron">›</div>' +
+      '</div>' +
+      '<div class="settings-list-item" data-nav="staffAccounts">' +
+        '<div class="icon">👥</div><div class="label">직원 계정 관리</div><div class="chevron">›</div>' +
+      '</div>' +
+      '<div class="settings-list-item" data-nav="qrMenu">' +
+        '<div class="icon">📱</div><div class="label">QR 메뉴판 보기</div><div class="chevron">›</div>' +
+      '</div>' +
+
+      '<div class="divider-line"></div>' +
+
+      '<div class="settings-list-item settings-logout" id="logout-btn">' +
+        '<div class="icon">🚪</div><div class="label">로그아웃</div>' +
+      '</div>'
+    );
+  }
+
+  function render() {
+    return (
+      '<style>' +
+        '.settings-list-item.no-toggle-click{cursor:default;flex-wrap:wrap;row-gap:8px;}' +
+        '.settings-list-item.no-toggle-click:active{background:transparent;}' +
+        '.settings-list-item .label-group{display:flex;flex-direction:column;gap:4px;flex:0 1 auto;min-width:0;}' +
+        '.settings-list-item .label-group .label{flex:none;}' +
+        '.settings-list-item .label-sub{font-size:var(--font-size-caption);color:var(--color-text-secondary);font-weight:500;}' +
+        '.settings-inline-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;margin-left:auto;}' +
+        '.settings-inline-actions .btn{height:32px;min-height:32px;padding:0 10px;font-size:12px;border-radius:10px;width:auto;white-space:nowrap;}' +
+        '.settings-list-item .chevron{color:var(--color-text-secondary);flex-shrink:0;font-size:20px;margin-left:auto;}' +
+        '.settings-logout .label{color:var(--color-accent-red);}' +
+        '.settings-logout .icon{filter:none;}' +
+      '</style>' +
+      '<div class="topbar">' +
+        '<div class="topbar-side"><button type="button" class="icon-btn" id="settings-back">←</button></div>' +
+        '<div class="topbar-title">설정</div>' +
+        '<div class="topbar-side"></div>' +
+      '</div>' +
+      '<div class="screen-scroll"><div id="settings-list-wrap"></div></div>'
+    );
+  }
+
+  function mount(root) {
+    var storeId = currentStoreId();
+
+    function bindListEvents(wrap) {
+      wrap.querySelectorAll('[data-status-action]').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var newStatus = btn.getAttribute('data-status-action');
+          window.MockApi.updateOperatingStatus(storeId, newStatus);
+          window.UI.toast('영업 상태가 변경되었어요');
+          refresh();
+        });
+      });
+
+      var autoToggle = wrap.querySelector('#auto-accept-toggle');
+      if (autoToggle) {
+        autoToggle.addEventListener('click', function () {
+          var store = window.MockApi.getStore(storeId);
+          var next = !store.autoAcceptOrders;
+          window.MockApi.updateAutoAccept(storeId, next);
+          window.UI.toast(next ? '자동 수락을 켰어요' : '자동 수락을 껐어요');
+          refresh();
+        });
+      }
+
+      wrap.querySelectorAll('[data-nav]').forEach(function (row) {
+        row.addEventListener('click', function () {
+          window.Router.showScreen(row.getAttribute('data-nav'), {});
+        });
+      });
+
+      var logoutBtn = wrap.querySelector('#logout-btn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', function () {
+          window.UI.confirmModal('로그아웃', '정말 로그아웃 하시겠어요?', '로그아웃', function () {
+            window.MockApi.logout();
+            window.Router.resetTo('login');
+          }, { danger: true });
+        });
+      }
+    }
+
+    function refresh() {
+      var store = window.MockApi.getStore(storeId);
+      var wrap = root.querySelector('#settings-list-wrap');
+      wrap.innerHTML = contentHtml(store);
+      bindListEvents(wrap);
+    }
+
+    root.querySelector('#settings-back').addEventListener('click', function () {
+      window.Router.back();
+    });
+
+    refresh();
+  }
+
+  function unmount() {}
+
+  window.Router.register('settings', { render: render, mount: mount, unmount: unmount });
+})();

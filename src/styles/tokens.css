@@ -1,0 +1,44 @@
+/*
+ * 디자인 토큰 — Toss 스타일 (블랙앤화이트 기본 + 예외적 포인트 컬러)
+ */
+:root {
+  /* Color */
+  --color-text-primary: #111111;
+  --color-bg: #ffffff;
+  --color-divider: #f2f3f5;
+  --color-disabled: #e5e8eb;
+  --color-text-secondary: #6b7684;
+  --color-accent-red: #e5484d;
+  --color-accent-red-bg: #fdecec;
+  --color-accent-green: #12b76a;
+  --color-accent-green-bg: #e9f9f1;
+  --color-accent-amber: #f5a623;
+  --color-accent-amber-bg: #fef3e2;
+  --color-accent-blue: #3182f6;
+  --color-white: #ffffff;
+
+  /* Typography */
+  --font-family-base: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-size-display: 32px;
+  --font-size-title: 22px;
+  --font-size-subtitle: 17px;
+  --font-size-body: 15px;
+  --font-size-caption: 13px;
+  --font-size-micro: 11px;
+
+  /* Radius / Spacing */
+  --radius-card: 16px;
+  --radius-button: 14px;
+  --radius-pill: 999px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Layout */
+  --cta-height: 56px;
+}
