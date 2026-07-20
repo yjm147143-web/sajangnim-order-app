@@ -107,15 +107,33 @@
         btn.addEventListener('click', function (e) {
           e.stopPropagation();
           var newStatus = btn.getAttribute('data-status-action');
-          function proceed() {
+
+          function applyStatusChange() {
+            if (newStatus === 'CLOSED') {
+              window.UI.confirmModal(
+                '정말 마감하시겠습니까?',
+                '마감을 진행하면 처리중에 있는 모든 주문건이 완료 처리됩니다.',
+                '마감하기',
+                function () {
+                  var result = window.MockApi.closeStoreAndCompleteProcessing(storeId);
+                  window.UI.toast(result.completedCount > 0
+                    ? ('영업 상태가 변경되었어요 · 처리중 주문 ' + result.completedCount + '건이 완료 처리됐어요')
+                    : '영업 상태가 변경되었어요');
+                  refresh();
+                },
+                { danger: true }
+              );
+              return;
+            }
             window.MockApi.updateOperatingStatus(storeId, newStatus);
             window.UI.toast('영업 상태가 변경되었어요');
             refresh();
           }
+
           if (user.role === 'STAFF') {
-            window.UI.requirePasswordGate(storeId, '영업상태 변경', proceed);
+            window.UI.requirePasswordGate(storeId, '영업상태 변경', applyStatusChange);
           } else {
-            proceed();
+            applyStatusChange();
           }
         });
       });

@@ -7,6 +7,19 @@
     return String(start || '').replace(/-/g, '.') + ' ~ ' + String(end || '').replace(/-/g, '.');
   }
 
+  // 개점 시 개점시간(00시 00분) / 마감 시 마감시간(00시 00분) 표시
+  function formatClockTime(iso) {
+    const d = new Date(iso);
+    return String(d.getHours()).padStart(2, '0') + '시 ' + String(d.getMinutes()).padStart(2, '0') + '분';
+  }
+
+  function statusTimeLabel(store) {
+    if (!store.statusChangedAt) return null;
+    if (store.operatingStatus === 'OPEN') return '개점 ' + formatClockTime(store.statusChangedAt);
+    if (store.operatingStatus === 'CLOSED') return '마감 ' + formatClockTime(store.statusChangedAt);
+    return null;
+  }
+
   // 누적 주문건수는 mockApi에 필드가 없어, 오늘 매출 대비 누적 매출 비율로 근사치를 계산한다.
   function estimateTotalOrderCount(summary) {
     if (!summary.todayAmount || !summary.todayOrderCount) return summary.todayOrderCount || 0;
@@ -23,9 +36,13 @@
 
     const storeRowsHtml = stores.length
       ? stores.map(function (s) {
+          const timeLabel = statusTimeLabel(s);
           return (
             '<div class="store-status-row">' +
-              '<span class="store-status-name">' + esc(s.name) + '</span>' +
+              '<div class="store-status-left">' +
+                '<span class="store-status-name">' + esc(s.name) + '</span>' +
+                (timeLabel ? '<span class="store-status-time">' + esc(timeLabel) + '</span>' : '') +
+              '</div>' +
               window.UI.statusPillHtml(s.operatingStatus) +
             '</div>'
           );
@@ -40,7 +57,9 @@
         '.info-row .info-value{font-weight:700;text-align:right;}' +
         '.store-status-row{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--color-divider);}' +
         '.store-status-row:last-child{border-bottom:none;}' +
+        '.store-status-left{display:flex;flex-direction:column;gap:2px;}' +
         '.store-status-name{font-weight:700;font-size:var(--font-size-body);}' +
+        '.store-status-time{font-size:var(--font-size-micro);color:var(--color-text-secondary);}' +
         '.card-flat{padding:0;overflow:hidden;}' +
       '</style>' +
       '<div class="topbar"><div class="topbar-side"></div><div class="topbar-title">' + esc(event.name) + '</div><div class="topbar-side"></div></div>' +

@@ -137,31 +137,38 @@
     const expanded = isBucketExpanded(window.UI.bucketKeyOf(order.orderedAt));
     const cls = 'order-card' + (order.canceled ? ' canceled' : '') + (order.called ? ' called' : '');
     let html = '<div class="' + cls + '">';
-    html += '<div class="order-card-header-row">' + renderCheckboxHtml(order, tabStatus, disabled) + window.UI.channelBadgeHtml(order.channel) + '</div>';
-    html += '<div class="order-card-payno-row">PG주문번호 ' + esc(order.paymentOrderNo) + '</div>';
+    const checkboxHtml = renderCheckboxHtml(order, tabStatus, disabled);
+    const channelHtml = expanded ? window.UI.channelBadgeHtml(order.channel) : '';
+    if (checkboxHtml || channelHtml) {
+      html += '<div class="order-card-header-row">' + checkboxHtml + channelHtml + '</div>';
+    }
+    if (expanded) {
+      html += '<div class="order-card-payno-row">PG주문번호 ' + esc(order.paymentOrderNo) + '</div>';
+    }
     html += '<div class="order-card-content-row">' +
       '<div class="order-card-menu-main">' + esc(mainMenuLabel(order)) + '</div>' +
       '<div class="order-card-pickup-block"><div class="pickup-label">픽업번호</div><div class="pickup-value">' + esc(order.pickupNo) + '</div></div>' +
       '</div>';
-    if (expanded) {
-      html += '<div class="order-card-time">' + window.UI.clockLabel(order.orderedAt) + ' 주문 (' + window.UI.elapsedLabel(order.orderedAt) + ')</div>';
-      const contact = window.UI.formatContact(order.customerContact);
-      const suspicious = window.UI.isPhoneSuspicious(order.customerContact);
-      html += '<div class="order-card-phone' + (suspicious ? ' suspicious' : '') + '">' + esc(contact) +
-        (suspicious ? ' <span class="phone-warning-inline">⚠️오입력</span>' : '') + '</div>';
-    }
+    // 전체 펼쳐보기/접기: 접었을 때도 대표주문메뉴·고객연락처·픽업번호·액션버튼·주문시간/경과시간은 노출한다
+    html += '<div class="order-card-time">' + window.UI.clockLabel(order.orderedAt) + ' 주문 (' + window.UI.elapsedLabel(order.orderedAt) + ')</div>';
+    const contact = window.UI.formatContact(order.customerContact);
+    const suspicious = window.UI.isPhoneSuspicious(order.customerContact);
+    html += '<div class="order-card-phone' + (suspicious ? ' suspicious' : '') + '">' + esc(contact) +
+      (suspicious ? ' <span class="phone-warning-inline">⚠️오입력</span>' : '') + '</div>';
     if (order.canceled) {
       const typeLabel = order.cancelType === 'RETURN' ? '반품' : (order.cancelType === 'PAYMENT_CANCEL' ? '결제취소' : '주문취소');
       html += '<div class="order-card-cancel-reason">[' + typeLabel + '] ' + esc(order.cancelReason || '') + '</div>';
     }
-    html += '<div class="order-card-payment-row">결제수단 ' + esc(order.paymentMethod) + (expanded ? ' · ' + window.UI.formatMoney(order.amount) : '') + '</div>';
     if (expanded) {
+      html += '<div class="order-card-payment-row">결제수단 ' + esc(order.paymentMethod) + ' · ' + window.UI.formatMoney(order.amount) + '</div>';
       html += '<div class="order-card-detail">' + order.items.map(function (it) {
         const optText = (it.optionNames && it.optionNames.length) ? ' <span class="opt">(' + it.optionNames.map(function (o) { return esc(o); }).join(', ') + ')</span>' : '';
         return '<div class="order-card-menu-line"><span>' + esc(it.menuName) + optText + '</span><span>' + it.quantity + '개</span></div>';
       }).join('') + '</div>';
     }
-    html += renderActionsHtml(order, tabStatus, disabled);
+    // 주문취소/결제취소/반품 처리된 완료 탭 건은 되돌리기·반품 버튼을 비활성화한다
+    const actionsDisabled = disabled || (tabStatus === 'DONE' && order.canceled);
+    html += renderActionsHtml(order, tabStatus, actionsDisabled);
     html += '</div>';
     return html;
   }
@@ -281,7 +288,7 @@
     }
 
     function renderModal() {
-      const options = ['품절', '고객 요청', '직접 입력'];
+      const options = ['재료 소진', '고객 요청', '영업 마감', '고객 미수령', '직접 입력'];
       let bodyHtml = '<div class="reason-pill-row">' + options.map(function (opt) {
         return '<button type="button" class="pill-btn reason-pill' + (selected === opt ? ' active' : '') + '" data-reason="' + opt + '">' + opt + '</button>';
       }).join('') + '</div>';
@@ -515,10 +522,10 @@
       '<div style="display:flex; gap:8px;">' +
       '<button type="button" class="pill-btn" id="sort-btn" data-action="toggle-sort">' + sortLabel() + ' ▾</button>' +
       '<button type="button" class="pill-btn' + (menuFilter ? ' active' : '') + '" id="menu-filter-btn" data-action="open-menu-filter">' + (menuFilter ? '메뉴 · ' + esc(menuFilter) : '메뉴 필터') + '</button>' +
+      '<button type="button" class="pill-btn" id="expand-all-toggle" data-action="toggle-expand-all">' + (expandedAll ? '접기' : '펼쳐보기') + '</button>' +
       '</div>' +
       '</div>' +
       '</div>' +
-      '<div class="order-card-expand-toggle" id="expand-all-toggle" data-action="toggle-expand-all">' + (expandedAll ? '접기' : '펼쳐보기') + '</div>' +
       '<div class="screen-scroll" id="order-scroll">' +
       '<div class="order-list" id="order-list-wrap">' + renderGroupsHtml(groups, orders, disabled) + '</div>' +
       '</div>' +

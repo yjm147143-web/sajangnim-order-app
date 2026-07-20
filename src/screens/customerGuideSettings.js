@@ -196,7 +196,8 @@
           '</div>' +
         '</div>' +
 
-      '</div>'
+      '</div>' +
+      '<div class="cta-fixed"><button type="button" class="btn btn-primary" id="cg-save-btn">저장</button></div>'
     );
   }
 
@@ -217,8 +218,18 @@
       exQty: 1,
     };
 
-    function persist(patch) {
-      window.MockApi.updateCustomerGuideSettings(storeId, patch);
+    // 예상 시간/대기 주문 수 2개 탭 공통 "저장" 버튼을 눌러야 값이 실제로 저장된다 (그 전까지는 화면 내 미리보기만 갱신)
+    function saveAll() {
+      window.MockApi.updateCustomerGuideSettings(storeId, {
+        displayMode: state.displayMode,
+        cookTimeBase: state.cookTimeBase,
+        cookTimeMarginal: state.cookTimeMarginal,
+        cookTimeBatch: state.cookTimeBatch,
+        hasHelper: state.hasHelper,
+        helperCount: state.helperCount,
+        bufferMinutes: state.bufferMinutes,
+      });
+      window.UI.toast('저장했어요');
     }
 
     // ---------- 모드 ----------
@@ -300,43 +311,34 @@
     root.querySelectorAll('#mode-select .mode-select-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
         state.displayMode = btn.getAttribute('data-mode');
-        persist({ displayMode: state.displayMode });
         renderMode();
         renderCookFields();
       });
     });
 
-    function bumpStepper(id, delta, min, apply) {
-      return function () {
-        var next = Math.round((apply.get() + delta) * 10) / 10;
-        if (next < min) next = min;
-        apply.set(next);
-      };
-    }
-
     root.querySelector('[data-stepper-minus="base"]').addEventListener('click', function () {
       state.cookTimeBase = Math.max(0, state.cookTimeBase - 1);
-      persist({ cookTimeBase: state.cookTimeBase }); renderCookFields(); renderPreview();
+      renderCookFields(); renderPreview();
     });
     root.querySelector('[data-stepper-plus="base"]').addEventListener('click', function () {
       state.cookTimeBase = state.cookTimeBase + 1;
-      persist({ cookTimeBase: state.cookTimeBase }); renderCookFields(); renderPreview();
+      renderCookFields(); renderPreview();
     });
     root.querySelector('[data-stepper-minus="marginal"]').addEventListener('click', function () {
       state.cookTimeMarginal = Math.max(0, state.cookTimeMarginal - 1);
-      persist({ cookTimeMarginal: state.cookTimeMarginal }); renderCookFields(); renderPreview();
+      renderCookFields(); renderPreview();
     });
     root.querySelector('[data-stepper-plus="marginal"]').addEventListener('click', function () {
       state.cookTimeMarginal = state.cookTimeMarginal + 1;
-      persist({ cookTimeMarginal: state.cookTimeMarginal }); renderCookFields(); renderPreview();
+      renderCookFields(); renderPreview();
     });
     root.querySelector('[data-stepper-minus="batch"]').addEventListener('click', function () {
       state.cookTimeBatch = Math.max(1, state.cookTimeBatch - 1);
-      persist({ cookTimeBatch: state.cookTimeBatch }); renderCookFields(); renderPreview();
+      renderCookFields(); renderPreview();
     });
     root.querySelector('[data-stepper-plus="batch"]').addEventListener('click', function () {
       state.cookTimeBatch = state.cookTimeBatch + 1;
-      persist({ cookTimeBatch: state.cookTimeBatch }); renderCookFields(); renderPreview();
+      renderCookFields(); renderPreview();
     });
 
     root.querySelectorAll('#helper-choice button').forEach(function (btn) {
@@ -344,27 +346,28 @@
         var together = btn.getAttribute('data-helper') === 'together';
         state.hasHelper = together;
         if (together && state.helperCount < 0.5) state.helperCount = 0.5;
-        persist({ hasHelper: state.hasHelper, helperCount: state.helperCount });
         renderHelper(); renderCookFields(); renderPreview();
       });
     });
     root.querySelector('[data-stepper-minus="helper"]').addEventListener('click', function () {
       state.helperCount = Math.max(0.5, Math.round((state.helperCount - 0.5) * 2) / 2);
-      persist({ helperCount: state.helperCount }); renderHelper(); renderCookFields(); renderPreview();
+      renderHelper(); renderCookFields(); renderPreview();
     });
     root.querySelector('[data-stepper-plus="helper"]').addEventListener('click', function () {
       state.helperCount = Math.round((state.helperCount + 0.5) * 2) / 2;
-      persist({ helperCount: state.helperCount }); renderHelper(); renderCookFields(); renderPreview();
+      renderHelper(); renderCookFields(); renderPreview();
     });
 
     root.querySelector('[data-stepper-minus="buffer"]').addEventListener('click', function () {
       state.bufferMinutes = Math.max(0, state.bufferMinutes - 1);
-      persist({ bufferMinutes: state.bufferMinutes }); renderBuffer(); renderCookFields(); renderPreview();
+      renderBuffer(); renderCookFields(); renderPreview();
     });
     root.querySelector('[data-stepper-plus="buffer"]').addEventListener('click', function () {
       state.bufferMinutes = state.bufferMinutes + 1;
-      persist({ bufferMinutes: state.bufferMinutes }); renderBuffer(); renderCookFields(); renderPreview();
+      renderBuffer(); renderCookFields(); renderPreview();
     });
+
+    root.querySelector('#cg-save-btn').addEventListener('click', saveAll);
 
     root.querySelector('[data-stepper-minus="exqty"]').addEventListener('click', function () {
       state.exQty = Math.max(1, state.exQty - 1); renderPreview();

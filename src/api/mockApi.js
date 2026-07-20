@@ -66,6 +66,21 @@
     return store;
   }
 
+  // 마감 시 '처리중' 주문 전체를 완료 처리하고 매장을 마감 상태로 전환한다.
+  function closeStoreAndCompleteProcessing(storeId) {
+    const store = findStore(storeId);
+    const affected = DB.orders.filter(function (o) { return o.storeId === storeId && o.status === 'PROCESSING' && !o.canceled; });
+    affected.forEach(function (o) {
+      o.status = 'DONE';
+      o.completeCount = (o.completeCount || 0) + 1;
+      o.doneAt = new Date().toISOString();
+    });
+    store.operatingStatus = 'CLOSED';
+    store.statusChangedAt = new Date().toISOString();
+    persist();
+    return { completedCount: affected.length };
+  }
+
   function getCustomerGuideSettings(storeId) {
     const store = findStore(storeId);
     return {
@@ -293,40 +308,77 @@
   // ---------------- Sales (사장님) ----------------
   function ordersFor(storeId) { return DB.orders.filter(function (o) { return o.storeId === storeId; }); }
 
-  function getSalesByChannel(storeId) {
+  // 매출 조회 공통 기간 필터: { preset: 'today'|'yesterday'|'last30'|'custom', start, end }
+  // '기간 설정'(custom)은 최근 30일 범위 안에서만 조회 가능 (getSalesDateBounds 참고)
+  function getSalesDateBounds() {
+    const today = new Date();
+    const min = new Date(today.getTime() - 29 * 86400000);
+    return { min: min.toISOString().slice(0, 10), max: today.toISOString().slice(0, 10) };
+  }
+
+  function filterDailyRange(dailySales, range) {
+    range = range || { preset: 'today' };
+    const todayStr = new Date().toISOString().slice(0, 10);
+    if (range.preset === 'yesterday') {
+      const y = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+      return dailySales.filter(function (d) { return d.date === y; });
+    }
+    if (range.preset === 'last30') return dailySales;
+    if (range.preset === 'custom' && range.start && range.end) {
+      const bounds = getSalesDateBounds();
+      const start = range.start < bounds.min ? bounds.min : range.start;
+      const end = range.end > bounds.max ? bounds.max : range.end;
+      return dailySales.filter(function (d) { return d.date >= start && d.date <= end; });
+    }
+    return dailySales.filter(function (d) { return d.date === todayStr; });
+  }
+
+  function getSalesByChannel(storeId, range) {
     const store = findStore(storeId);
-    const done = ordersFor(storeId).filter(function (o) { return o.status === 'DONE' && !o.canceled; });
-    const qr = done.filter(function (o) { return o.channel === 'QR'; });
-    const tablet = done.filter(function (o) { return o.channel === 'TABLET'; });
-    const qrAmount = qr.reduce(function (s, o) { return s + o.amount; }, 0);
-    const tabletAmount = tablet.reduce(function (s, o) { return s + o.amount; }, 0);
+    const days = filterDailyRange(store.dailySales || [], range);
+    const sums = { QR: 0, TABLET: 0, CASH: 0 };
+    days.forEach(function (d) { sums.QR += d.byChannel.QR; sums.TABLET += d.byChannel.TABLET; sums.CASH += d.byChannel.CASH; });
     return [
-      { name: 'QR오더', amount: qrAmount + Math.round(store.todaySalesAmount ? 0 : 0), count: qr.length },
-      { name: '태블릿오더', amount: tabletAmount, count: tablet.length },
-      { name: '현금', amount: store.cashSalesAmount || 0, count: store.cashOrderCount || 0 },
+      { name: 'QR오더', amount: sums.QR },
+      { name: '태블릿오더', amount: sums.TABLET },
+      { name: '현금', amount: sums.CASH },
     ];
   }
 
-  function getSalesByPayment(storeId) {
+  function getSalesByPayment(storeId, range) {
     const store = findStore(storeId);
-    const stats = store.salesStats && store.salesStats.byPayment;
-    if (!stats) return [];
-    return Object.keys(stats).map(function (k) { return { name: k, amount: stats[k].amount, count: stats[k].count }; });
+    const days = filterDailyRange(store.dailySales || [], range);
+    const sums = { 카드: 0, 간편결제: 0, 쿠폰: 0 };
+    days.forEach(function (d) { sums.카드 += d.byPayment.카드; sums.간편결제 += d.byPayment.간편결제; sums.쿠폰 += d.byPayment.쿠폰; });
+    return Object.keys(sums).map(function (k) { return { name: k, amount: sums[k] }; });
   }
 
-  function getSalesByHour(storeId) {
+  function getSalesByHour(storeId, range) {
     const store = findStore(storeId);
-    return (store.salesStats && store.salesStats.byHour || []).map(function (h) { return { name: h.hour + '시', amount: h.amount }; });
+    const days = filterDailyRange(store.dailySales || [], range);
+    const hours = ['10', '11', '12', '13', '14', '15', '16'];
+    const sums = {}; hours.forEach(function (h) { sums[h] = 0; });
+    days.forEach(function (d) { d.byHour.forEach(function (h) { sums[h.hour] += h.amount; }); });
+    return hours.map(function (h) { return { name: h + '시', amount: sums[h] }; });
   }
 
-  function getSalesByMenu(storeId) {
+  function getSalesByMenu(storeId, range) {
     const store = findStore(storeId);
-    return (store.salesStats && store.salesStats.byMenu || []).slice().sort(function (a, b) { return b.amount - a.amount; });
+    const days = filterDailyRange(store.dailySales || [], range);
+    const map = {};
+    days.forEach(function (d) {
+      d.byMenu.forEach(function (m) {
+        if (!map[m.name]) map[m.name] = { name: m.name, qty: 0, amount: 0 };
+        map[m.name].qty += m.qty; map[m.name].amount += m.amount;
+      });
+    });
+    return Object.keys(map).map(function (k) { return map[k]; }).sort(function (a, b) { return b.amount - a.amount; });
   }
 
-  function getSalesByPeriod(storeId) {
+  function getSalesByPeriod(storeId, range) {
     const store = findStore(storeId);
-    return (store.salesStats && store.salesStats.byDay || []).map(function (d) { return { name: d.date.slice(5).replace('-', '.'), amount: d.amount, date: d.date }; });
+    const days = filterDailyRange(store.dailySales || [], range);
+    return days.map(function (d) { return { name: d.date.slice(5).replace('-', '.'), amount: d.totalAmount, date: d.date }; });
   }
 
   // ---------------- Event Manager ----------------
@@ -400,25 +452,80 @@
     return getEventDashboardSummary(eventId);
   }
 
-  function getEventSalesByStore(eventId) {
+  // 매장별 매출 랭킹 + 매장별 제일 많이 팔린 메뉴 (행사담당자 매출현황 > 상세매출 > 매장별 매출)
+  function getEventStoreSalesRanking(eventId) {
     const stores = getStoresByEvent(eventId);
-    return stores.map(function (s) { return { name: s.name, amount: s.todaySalesAmount || 0, totalAmount: s.totalSalesAmount || 0, storeId: s.id }; })
-      .sort(function (a, b) { return b.amount - a.amount; });
+    return stores.map(function (s) {
+      let topMenuName = s.topMenuName || null;
+      let topMenuQty = s.topMenuQty || null;
+      if (s.salesStats && s.salesStats.byMenu && s.salesStats.byMenu.length) {
+        const sorted = s.salesStats.byMenu.slice().sort(function (a, b) { return b.amount - a.amount; });
+        topMenuName = sorted[0].name;
+        topMenuQty = sorted[0].qty;
+      }
+      return { name: s.name, amount: s.todaySalesAmount || 0, totalAmount: s.totalSalesAmount || 0, topMenuName: topMenuName, topMenuQty: topMenuQty, storeId: s.id };
+    }).sort(function (a, b) { return b.amount - a.amount; });
   }
 
-  function getEventSalesByPayment(eventId) {
+  // 행사 담당자용 기간 프리셋: 'today'(당일) | 'yesterday'(전일) | 'eventPeriod'(행사일)
+  function amountForPreset(store, preset) {
+    if (store.id === 'store-1' && store.dailySales) {
+      if (preset === 'yesterday') { const r = store.dailySales[store.dailySales.length - 2]; return r ? r.totalAmount : 0; }
+      if (preset === 'eventPeriod') return store.totalSalesAmount || 0;
+      const r = store.dailySales[store.dailySales.length - 1]; return r ? r.totalAmount : 0;
+    }
+    if (preset === 'yesterday') return store.yesterdaySalesAmount || 0;
+    if (preset === 'eventPeriod') return store.totalSalesAmount || 0;
+    return store.todaySalesAmount || 0;
+  }
+
+  function getEventSalesByPayment(eventId, preset) {
+    preset = preset || 'today';
     const stores = getStoresByEvent(eventId);
     const agg = { 카드: 0, 간편결제: 0, 쿠폰: 0 };
     stores.forEach(function (s) {
-      if (s.salesStats && s.salesStats.byPayment) {
-        Object.keys(s.salesStats.byPayment).forEach(function (k) { agg[k] = (agg[k] || 0) + s.salesStats.byPayment[k].amount; });
-      } else if (s.todaySalesAmount) {
-        agg['카드'] += Math.round(s.todaySalesAmount * 0.6);
-        agg['간편결제'] += Math.round(s.todaySalesAmount * 0.3);
-        agg['쿠폰'] += Math.round(s.todaySalesAmount * 0.1);
+      if (s.id === 'store-1' && s.dailySales && preset !== 'eventPeriod') {
+        const idx = preset === 'yesterday' ? s.dailySales.length - 2 : s.dailySales.length - 1;
+        const rec = s.dailySales[idx];
+        if (rec) { agg.카드 += rec.byPayment.카드; agg.간편결제 += rec.byPayment.간편결제; agg.쿠폰 += rec.byPayment.쿠폰; }
+        return;
       }
+      const base = amountForPreset(s, preset);
+      agg['카드'] += Math.round(base * 0.6);
+      agg['간편결제'] += Math.round(base * 0.3);
+      agg['쿠폰'] += Math.round(base * 0.1);
     });
     return Object.keys(agg).map(function (k) { return { name: k, amount: agg[k] }; });
+  }
+
+  // 행사담당자 상세매출 > 기간별 매출: 당일/전일은 단일 합계, 행사일은 행사 시작일~오늘 일자별 추이
+  function getEventSalesByPeriod(eventId, preset) {
+    preset = preset || 'today';
+    const event = getEvent(eventId);
+    const stores = getStoresByEvent(eventId);
+    if (preset === 'today' || preset === 'yesterday') {
+      let amount = 0;
+      stores.forEach(function (s) { amount += amountForPreset(s, preset); });
+      return [{ name: preset === 'today' ? '오늘' : '전일', amount: amount }];
+    }
+    const start = new Date(event.startDate);
+    const dayCount = Math.max(1, Math.round((Date.now() - start.getTime()) / 86400000) + 1);
+    const days = [];
+    for (let i = 0; i < dayCount; i++) {
+      const d = new Date(start.getTime() + i * 86400000);
+      const dateStr = d.toISOString().slice(0, 10);
+      let amount = 0;
+      stores.forEach(function (s) {
+        if (s.id === 'store-1' && s.dailySales) {
+          const rec = s.dailySales.find(function (x) { return x.date === dateStr; });
+          amount += rec ? rec.totalAmount : Math.round((s.totalSalesAmount || 0) / dayCount);
+        } else {
+          amount += Math.round((s.totalSalesAmount || 0) / dayCount);
+        }
+      });
+      days.push({ name: dateStr.slice(5).replace('-', '.'), amount: amount, date: dateStr });
+    }
+    return days;
   }
 
   function getEventSalesByHour(eventId) {
@@ -460,6 +567,7 @@
   window.MockApi = {
     getCurrentUser: getCurrentUser, getAutoLogin: getAutoLogin, login: login, logout: logout,
     getStore: getStore, updateOperatingStatus: updateOperatingStatus, updateAutoAccept: updateAutoAccept,
+    closeStoreAndCompleteProcessing: closeStoreAndCompleteProcessing,
     getCustomerGuideSettings: getCustomerGuideSettings, updateCustomerGuideSettings: updateCustomerGuideSettings, getQrMenuInfo: getQrMenuInfo,
     getPermissionLockStatus: getPermissionLockStatus, setPermissionLockPassword: setPermissionLockPassword,
     clearPermissionLockPassword: clearPermissionLockPassword, verifyPermissionLockPassword: verifyPermissionLockPassword,
@@ -470,12 +578,14 @@
     callCustomer: callCustomer, completeOrder: completeOrder, cancelPayment: cancelPayment,
     revertOrder: revertOrder, returnOrder: returnOrder, bulkAction: bulkAction,
     getSalesByChannel: getSalesByChannel, getSalesByPayment: getSalesByPayment, getSalesByHour: getSalesByHour,
-    getSalesByMenu: getSalesByMenu, getSalesByPeriod: getSalesByPeriod,
+    getSalesByMenu: getSalesByMenu, getSalesByPeriod: getSalesByPeriod, getSalesDateBounds: getSalesDateBounds,
     getMyEvents: getMyEvents, getEvent: getEvent, getStoresByEvent: getStoresByEvent,
     getEventDashboardSummary: getEventDashboardSummary, getAttentionStores: getAttentionStores,
     bulkUpdateStoreStatus: bulkUpdateStoreStatus, addAuditLog: addAuditLog, getAuditLogs: getAuditLogs,
-    getEventSalesSummary: getEventSalesSummary, getEventSalesByStore: getEventSalesByStore,
+    getEventSalesSummary: getEventSalesSummary,
+    getEventStoreSalesRanking: getEventStoreSalesRanking,
     getEventSalesByPayment: getEventSalesByPayment, getEventSalesByHour: getEventSalesByHour,
     getEventSalesByChannel: getEventSalesByChannel, getEventSalesByMenu: getEventSalesByMenu,
+    getEventSalesByPeriod: getEventSalesByPeriod,
   };
 })();

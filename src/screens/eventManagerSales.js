@@ -4,12 +4,15 @@
  */
 (function () {
   const DETAIL_CARDS = [
+    { key: 'store', icon: '🏪', label: '매장별 매출' },
     { key: 'period', icon: '📅', label: '기간별 매출' },
     { key: 'menu', icon: '🍽️', label: '메뉴별 매출' },
     { key: 'hour', icon: '🕒', label: '시간대별 매출' },
     { key: 'channel', icon: '🧾', label: '주문 방식별 매출' },
     { key: 'payment', icon: '💳', label: '결제수단별 매출' },
   ];
+
+  const PERIOD_PRESETS = [{ key: 'today', label: '당일' }, { key: 'yesterday', label: '전일' }, { key: 'eventPeriod', label: '행사일' }];
 
   function computeChannelRatio(eventId) {
     const rows = window.MockApi.getEventSalesByChannel(eventId);
@@ -21,11 +24,36 @@
     return '<div class="empty-state"><div class="empty-state-emoji">📭</div><div>데이터가 없어요</div></div>';
   }
 
-  function renderDetailBody(key, eventId) {
+  function periodFilterHtml(preset) {
+    return '<div class="date-range-bar" id="detail-period-filter">' + PERIOD_PRESETS.map(function (o) {
+      return '<button type="button" class="pill-btn' + (preset === o.key ? ' active' : '') + '" data-preset="' + o.key + '">' + o.label + '</button>';
+    }).join('') + '</div>';
+  }
+
+  function storeRankingHtml(eventId) {
+    const esc = window.UI.escapeHtml;
+    const data = window.MockApi.getEventStoreSalesRanking(eventId);
+    if (!data.length) return emptyHtml();
+    const max = Math.max(1, Math.max.apply(null, data.map(function (d) { return d.amount; })));
+    return '<div class="section-caption">오늘 매출 기준 · 높은 순</div><div class="rank-list">' + data.map(function (d, i) {
+      const pct = Math.round((d.amount / max) * 100);
+      return '<div class="rank-row">' +
+        '<div class="rank-index">' + (i + 1) + '</div>' +
+        '<div class="rank-body">' +
+        '<div class="rank-name-row"><span>' + esc(d.name) + '</span><span>' + window.UI.formatMoney(d.amount) + '</span></div>' +
+        '<div class="rank-bar-track"><div class="rank-bar-fill' + (i === 0 ? ' max' : '') + '" style="width:' + pct + '%"></div></div>' +
+        (d.topMenuName ? '<div class="rank-sub">베스트 메뉴 · ' + esc(d.topMenuName) + (d.topMenuQty ? ' ' + d.topMenuQty + '개' : '') + '</div>' : '') +
+        '</div></div>';
+    }).join('') + '</div>';
+  }
+
+  function renderDetailBody(key, eventId, preset) {
+    if (key === 'store') {
+      return '<div class="chart-card">' + storeRankingHtml(eventId) + '</div>';
+    }
     if (key === 'period') {
-      const s = window.MockApi.getEventDashboardSummary(eventId);
-      const data = [{ name: '오늘', amount: s.todayAmount }, { name: '누적', amount: s.totalAmount }];
-      return '<div class="section-caption">참여 매장들의 누적 매출 추이 데이터가 없어, 오늘 대비 누적 매출로 단순 비교해요</div><div class="chart-card">' + window.UI.barChartHtml(data) + '</div>';
+      const data = window.MockApi.getEventSalesByPeriod(eventId, preset);
+      return periodFilterHtml(preset) + '<div id="detail-chart-slot">' + (data.length ? '<div class="chart-card">' + window.UI.barChartHtml(data) + '</div>' : emptyHtml()) + '</div>';
     }
     if (key === 'menu') {
       const data = window.MockApi.getEventSalesByMenu(eventId);
@@ -40,8 +68,8 @@
       return data.length ? '<div class="chart-card">' + window.UI.donutChartHtml(data) + '</div>' : emptyHtml();
     }
     if (key === 'payment') {
-      const data = window.MockApi.getEventSalesByPayment(eventId).slice().sort(function (a, b) { return b.amount - a.amount; });
-      return data.length ? '<div class="chart-card">' + window.UI.donutChartHtml(data) + '</div>' : emptyHtml();
+      const data = window.MockApi.getEventSalesByPayment(eventId, preset).slice().sort(function (a, b) { return b.amount - a.amount; });
+      return periodFilterHtml(preset) + '<div id="detail-chart-slot">' + (data.length ? '<div class="chart-card">' + window.UI.donutChartHtml(data) + '</div>' : emptyHtml()) + '</div>';
     }
     return '';
   }
@@ -51,7 +79,6 @@
     const eventId = params.eventId;
     const summary = window.MockApi.getEventDashboardSummary(eventId);
     const channelRatio = computeChannelRatio(eventId);
-    const storeRank = window.MockApi.getEventSalesByStore(eventId);
 
     const channelRatioText = channelRatio.map(function (c) { return esc(c.name) + ' ' + c.pct + '%'; }).join(' · ');
 
@@ -83,11 +110,7 @@
         '</div>' +
         '<div class="channel-ratio-row">주문경로 비중 · ' + channelRatioText + '</div>' +
 
-        '<div class="section-title">매장별 매출 랭킹</div>' +
-        '<div class="section-caption">오늘 매출 기준 · 높은 순</div>' +
-        (storeRank.length ? window.UI.rankListHtml(storeRank) : emptyHtml()) +
-
-        '<div class="section-title" style="margin-top:8px;">상세 매출</div>' +
+        '<div class="section-title">상세 매출</div>' +
         '<div style="padding:0 20px 24px;display:flex;flex-direction:column;gap:12px;">' + detailListHtml + '</div>' +
 
       '</div>' +
@@ -108,13 +131,28 @@
     const backBtn = root.querySelector('#detail-back');
     const titleEl = root.querySelector('#detail-title');
     const bodyEl = root.querySelector('#detail-body');
+    let currentPreset = 'today';
+
+    function paintDetail(key, label) {
+      bodyEl.innerHTML = renderDetailBody(key, eventId, currentPreset);
+      const filterEl = bodyEl.querySelector('#detail-period-filter');
+      if (filterEl) {
+        filterEl.querySelectorAll('[data-preset]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            currentPreset = btn.getAttribute('data-preset');
+            paintDetail(key, label);
+          });
+        });
+      }
+    }
 
     root.querySelectorAll('[data-detail-key]').forEach(function (el) {
       el.addEventListener('click', function () {
         const key = el.getAttribute('data-detail-key');
         const label = el.getAttribute('data-detail-label');
+        currentPreset = 'today';
         titleEl.textContent = label;
-        bodyEl.innerHTML = renderDetailBody(key, eventId);
+        paintDetail(key, label);
         overlay.classList.add('show');
       });
     });

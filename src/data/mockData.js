@@ -6,6 +6,49 @@
   function minutesAgo(n) { return new Date(Date.now() - n * 60000).toISOString(); }
   function daysAgo(n) { return new Date(Date.now() - n * 86400000).toISOString(); }
 
+  // 매출 조회 기간 필터(당일/전일/최근1달/기간설정)를 지원하기 위한 최근 30일 일별 매출 데이터 생성
+  function buildDailySales(baseAmount, menuList) {
+    const hours = ['10', '11', '12', '13', '14', '15', '16'];
+    const hourWeights = [0.08, 0.16, 0.24, 0.20, 0.11, 0.09, 0.12];
+    const menuWeights = [0.30, 0.24, 0.20, 0.14, 0.09, 0.03];
+    const days = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 86400000);
+      const dateStr = d.toISOString().slice(0, 10);
+      const weekday = d.getDay();
+      const weekendBoost = (weekday === 0 || weekday === 6) ? 1.35 : 1;
+      const variance = 0.7 + Math.random() * 0.6;
+      const dayTotal = Math.round(baseAmount * weekendBoost * variance / 1000) * 1000;
+
+      const qrShare = 0.5 + Math.random() * 0.15;
+      const tabletShare = 0.35 + Math.random() * 0.1;
+      const cashShare = Math.max(0.02, 1 - qrShare - tabletShare);
+      const byChannel = {
+        QR: Math.round(dayTotal * qrShare),
+        TABLET: Math.round(dayTotal * tabletShare),
+        CASH: Math.round(dayTotal * cashShare),
+      };
+
+      const cardShare = 0.5 + Math.random() * 0.1;
+      const easyShare = 0.3 + Math.random() * 0.1;
+      const couponShare = Math.max(0.02, 1 - cardShare - easyShare);
+      const byPayment = {
+        카드: Math.round(dayTotal * cardShare),
+        간편결제: Math.round(dayTotal * easyShare),
+        쿠폰: Math.round(dayTotal * couponShare),
+      };
+
+      const byHour = hours.map(function (h, idx) { return { hour: h, amount: Math.round(dayTotal * hourWeights[idx]) }; });
+      const byMenu = menuList.map(function (m, idx) {
+        const amount = Math.round(dayTotal * menuWeights[idx]);
+        return { name: m.name, qty: Math.max(1, Math.round(amount / m.avgPrice)), amount: amount };
+      });
+
+      days.push({ date: dateStr, totalAmount: dayTotal, byChannel: byChannel, byPayment: byPayment, byHour: byHour, byMenu: byMenu });
+    }
+    return days;
+  }
+
   function buildSeed() {
     const users = [
       { id: 'user-owner-1', role: 'OWNER', loginId: 'owner', password: '1234', name: '김사장', storeId: 'store-1' },
@@ -53,12 +96,20 @@
             { date: new Date().toISOString().slice(0, 10), amount: 612000 },
           ],
         },
+        dailySales: buildDailySales(550000, [
+          { name: '아메리카노', avgPrice: 4500 },
+          { name: '카페라떼', avgPrice: 5000 },
+          { name: '크로플', avgPrice: 6000 },
+          { name: '레모네이드', avgPrice: 5000 },
+          { name: '바닐라라떼', avgPrice: 5500 },
+          { name: '초코쿠키', avgPrice: 3500 },
+        ]),
       },
-      { id: 'store-2', eventId: 'event-1', name: '고로케 트럭', operatingStatus: 'OPEN', autoAcceptOrders: true, guideDisplayMode: 'queue', cookTimeBase: 8, cookTimeMarginal: 1, cookTimeBatch: 8, cookHasHelper: true, cookHelperCount: 1, cookBufferMinutes: 2, statusChangedAt: minutesAgo(240), ownerName: '정사장', ownerPhone: '01022223333', cashSalesAmount: 156000, cashOrderCount: 11, todaySalesAmount: 470000, totalSalesAmount: 4700000, todayOrderCount: 62 },
-      { id: 'store-3', eventId: 'event-1', name: '타코야끼 부스', operatingStatus: 'OPEN', autoAcceptOrders: false, guideDisplayMode: 'time', cookTimeBase: 6, cookTimeMarginal: 1, cookTimeBatch: 12, cookHasHelper: false, cookHelperCount: 1, cookBufferMinutes: 1, statusChangedAt: minutesAgo(200), ownerName: '한사장', ownerPhone: '01044445555', cashSalesAmount: 32000, cashOrderCount: 3, todaySalesAmount: 312000, totalSalesAmount: 2100000, todayOrderCount: 41 },
-      { id: 'store-4', eventId: 'event-1', name: '크래프트비어 하우스', operatingStatus: 'OPEN', autoAcceptOrders: false, guideDisplayMode: 'time', cookTimeBase: 5, cookTimeMarginal: 1, cookTimeBatch: 4, cookHasHelper: false, cookHelperCount: 1, cookBufferMinutes: 2, statusChangedAt: minutesAgo(95), lastOrderAt: minutesAgo(95), ownerName: '윤사장', ownerPhone: '01055556666', cashSalesAmount: 210000, cashOrderCount: 9, todaySalesAmount: 588000, totalSalesAmount: 3300000, todayOrderCount: 38 },
-      { id: 'store-5', eventId: 'event-1', name: '떡볶이 포차', operatingStatus: 'CLOSED', autoAcceptOrders: true, guideDisplayMode: 'queue', cookTimeBase: 10, cookTimeMarginal: 2, cookTimeBatch: 6, cookHasHelper: false, cookHelperCount: 1, cookBufferMinutes: 2, statusChangedAt: minutesAgo(45), ownerName: '서사장', ownerPhone: '01066667777', cashSalesAmount: 40000, cashOrderCount: 4, todaySalesAmount: 198000, totalSalesAmount: 1500000, todayOrderCount: 25 },
-      { id: 'store-6', eventId: 'event-1', name: '핫도그 트럭', operatingStatus: 'PAUSED', autoAcceptOrders: false, guideDisplayMode: 'time', cookTimeBase: 7, cookTimeMarginal: 2, cookTimeBatch: 5, cookHasHelper: false, cookHelperCount: 1, cookBufferMinutes: 3, statusChangedAt: minutesAgo(15), ownerName: '문사장', ownerPhone: '01077778888', cashSalesAmount: 18000, cashOrderCount: 2, todaySalesAmount: 122000, totalSalesAmount: 980000, todayOrderCount: 16 },
+      { id: 'store-2', eventId: 'event-1', name: '고로케 트럭', operatingStatus: 'OPEN', autoAcceptOrders: true, guideDisplayMode: 'queue', cookTimeBase: 8, cookTimeMarginal: 1, cookTimeBatch: 8, cookHasHelper: true, cookHelperCount: 1, cookBufferMinutes: 2, statusChangedAt: minutesAgo(240), ownerName: '정사장', ownerPhone: '01022223333', cashSalesAmount: 156000, cashOrderCount: 11, todaySalesAmount: 470000, totalSalesAmount: 4700000, todayOrderCount: 62, yesterdaySalesAmount: 431000, topMenuName: '수제 고로케', topMenuQty: 88 },
+      { id: 'store-3', eventId: 'event-1', name: '타코야끼 부스', operatingStatus: 'OPEN', autoAcceptOrders: false, guideDisplayMode: 'time', cookTimeBase: 6, cookTimeMarginal: 1, cookTimeBatch: 12, cookHasHelper: false, cookHelperCount: 1, cookBufferMinutes: 1, statusChangedAt: minutesAgo(200), ownerName: '한사장', ownerPhone: '01044445555', cashSalesAmount: 32000, cashOrderCount: 3, todaySalesAmount: 312000, totalSalesAmount: 2100000, todayOrderCount: 41, yesterdaySalesAmount: 289000, topMenuName: '타코야끼 8알', topMenuQty: 64 },
+      { id: 'store-4', eventId: 'event-1', name: '크래프트비어 하우스', operatingStatus: 'OPEN', autoAcceptOrders: false, guideDisplayMode: 'time', cookTimeBase: 5, cookTimeMarginal: 1, cookTimeBatch: 4, cookHasHelper: false, cookHelperCount: 1, cookBufferMinutes: 2, statusChangedAt: minutesAgo(95), lastOrderAt: minutesAgo(95), ownerName: '윤사장', ownerPhone: '01055556666', cashSalesAmount: 210000, cashOrderCount: 9, todaySalesAmount: 588000, totalSalesAmount: 3300000, todayOrderCount: 38, yesterdaySalesAmount: 602000, topMenuName: 'IPA 생맥주', topMenuQty: 52 },
+      { id: 'store-5', eventId: 'event-1', name: '떡볶이 포차', operatingStatus: 'CLOSED', autoAcceptOrders: true, guideDisplayMode: 'queue', cookTimeBase: 10, cookTimeMarginal: 2, cookTimeBatch: 6, cookHasHelper: false, cookHelperCount: 1, cookBufferMinutes: 2, statusChangedAt: minutesAgo(45), ownerName: '서사장', ownerPhone: '01066667777', cashSalesAmount: 40000, cashOrderCount: 4, todaySalesAmount: 198000, totalSalesAmount: 1500000, todayOrderCount: 25, yesterdaySalesAmount: 245000, topMenuName: '즉석 떡볶이', topMenuQty: 45 },
+      { id: 'store-6', eventId: 'event-1', name: '핫도그 트럭', operatingStatus: 'PAUSED', autoAcceptOrders: false, guideDisplayMode: 'time', cookTimeBase: 7, cookTimeMarginal: 2, cookTimeBatch: 5, cookHasHelper: false, cookHelperCount: 1, cookBufferMinutes: 3, statusChangedAt: minutesAgo(15), ownerName: '문사장', ownerPhone: '01077778888', cashSalesAmount: 18000, cashOrderCount: 2, todaySalesAmount: 122000, totalSalesAmount: 980000, todayOrderCount: 16, yesterdaySalesAmount: 134000, topMenuName: '치즈 핫도그', topMenuQty: 21 },
     ];
 
     const categories = [

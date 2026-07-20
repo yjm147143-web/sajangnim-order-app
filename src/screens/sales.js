@@ -37,8 +37,8 @@
     );
   }
 
-  function channelDetailHtml(storeId) {
-    const data = window.MockApi.getSalesByChannel(storeId);
+  function channelDetailHtml(storeId, range) {
+    const data = window.MockApi.getSalesByChannel(storeId, range);
     const total = sumAmount(data);
     const rows = data.map(function (d) { return listRowHtml(d.name, d.amount, d.count); }).join('');
     return (
@@ -49,8 +49,8 @@
     );
   }
 
-  function periodDetailHtml(storeId) {
-    const data = window.MockApi.getSalesByPeriod(storeId);
+  function periodDetailHtml(storeId, range) {
+    const data = window.MockApi.getSalesByPeriod(storeId, range);
     const total = sumAmount(data);
     let maxItem = null, minItem = null;
     data.forEach(function (d) {
@@ -72,8 +72,8 @@
     );
   }
 
-  function menuDetailHtml(storeId) {
-    const data = window.MockApi.getSalesByMenu(storeId);
+  function menuDetailHtml(storeId, range) {
+    const data = window.MockApi.getSalesByMenu(storeId, range);
     const total = sumAmount(data);
     return (
       summaryCardHtml('합계 매출', total) +
@@ -82,8 +82,8 @@
     );
   }
 
-  function hourDetailHtml(storeId) {
-    const data = window.MockApi.getSalesByHour(storeId);
+  function hourDetailHtml(storeId, range) {
+    const data = window.MockApi.getSalesByHour(storeId, range);
     const total = sumAmount(data);
     const rows = data.map(function (d) { return listRowHtml(d.name, d.amount, null); }).join('');
     return (
@@ -94,8 +94,8 @@
     );
   }
 
-  function paymentDetailHtml(storeId) {
-    const data = window.MockApi.getSalesByPayment(storeId);
+  function paymentDetailHtml(storeId, range) {
+    const data = window.MockApi.getSalesByPayment(storeId, range);
     const total = sumAmount(data);
     const rows = data.map(function (d) { return listRowHtml(d.name, d.amount, d.count); }).join('');
     return (
@@ -104,6 +104,21 @@
       '<div class="section-title">결제수단별 상세</div>' +
       '<div class="sales-list">' + rows + '</div>'
     );
+  }
+
+  function rangeButtonLabel(range) {
+    if (range.preset === 'custom') return (range.start || '').slice(5).replace('-', '.') + ' ~ ' + (range.end || '').slice(5).replace('-', '.');
+    return '기간 설정';
+  }
+
+  function rangeFilterHtml(range) {
+    const presets = [{ key: 'today', label: '당일' }, { key: 'yesterday', label: '전일' }, { key: 'last30', label: '최근 1달' }];
+    return '<div class="date-range-bar" id="sales-range-filter">' +
+      presets.map(function (p) {
+        return '<button type="button" class="pill-btn' + (range.preset === p.key ? ' active' : '') + '" data-range-preset="' + p.key + '">' + p.label + '</button>';
+      }).join('') +
+      '<button type="button" class="pill-btn' + (range.preset === 'custom' ? ' active' : '') + '" id="range-custom-btn">' + rangeButtonLabel(range) + '</button>' +
+      '</div>';
   }
 
   function hubCardRowHtml(card) {
@@ -135,24 +150,46 @@
     );
   }
 
-  function detailHtml(key) {
+  function detailHtml(key, range) {
     const meta = HUB_CARDS.filter(function (c) { return c.key === key; })[0] || { title: '매출 조회' };
     const user = window.MockApi.getCurrentUser();
     const storeId = user.storeId;
     let body = '';
-    if (key === 'channel') body = channelDetailHtml(storeId);
-    else if (key === 'period') body = periodDetailHtml(storeId);
-    else if (key === 'menu') body = menuDetailHtml(storeId);
-    else if (key === 'hour') body = hourDetailHtml(storeId);
-    else if (key === 'payment') body = paymentDetailHtml(storeId);
+    if (key === 'channel') body = channelDetailHtml(storeId, range);
+    else if (key === 'period') body = periodDetailHtml(storeId, range);
+    else if (key === 'menu') body = menuDetailHtml(storeId, range);
+    else if (key === 'hour') body = hourDetailHtml(storeId, range);
+    else if (key === 'payment') body = paymentDetailHtml(storeId, range);
     return (
       '<div class="topbar">' +
         '<div class="topbar-side"><button type="button" class="icon-btn" id="sales-detail-back" aria-label="뒤로가기">←</button></div>' +
         '<div class="topbar-title">' + meta.title + '</div>' +
         '<div class="topbar-side"></div>' +
       '</div>' +
-      '<div class="screen-scroll">' + body + '</div>'
+      '<div class="screen-scroll">' + rangeFilterHtml(range) + body + '</div>'
     );
+  }
+
+  function openCustomRangeSheet(onApply) {
+    const bounds = window.MockApi.getSalesDateBounds();
+    const bodyHtml =
+      '<div class="sheet-title">기간 설정</div>' +
+      '<div class="section-caption" style="padding:0 0 12px;">최근 1달 이내에서만 선택할 수 있어요</div>' +
+      '<div class="input-group"><div class="input-label">시작일</div><input class="input-field" type="date" id="range-start-input" min="' + bounds.min + '" max="' + bounds.max + '" value="' + bounds.min + '" /></div>' +
+      '<div class="input-group"><div class="input-label">종료일</div><input class="input-field" type="date" id="range-end-input" min="' + bounds.min + '" max="' + bounds.max + '" value="' + bounds.max + '" /></div>' +
+      '<div class="input-error" id="range-error-text" style="display:none;"></div>' +
+      '<button type="button" class="btn btn-primary" id="range-apply-btn">적용</button>';
+    window.UI.showBottomSheet(bodyHtml, function (host) {
+      host.querySelector('#range-apply-btn').addEventListener('click', function () {
+        const start = host.querySelector('#range-start-input').value;
+        const end = host.querySelector('#range-end-input').value;
+        const errEl = host.querySelector('#range-error-text');
+        if (!start || !end) { errEl.textContent = '시작일과 종료일을 모두 선택해주세요.'; errEl.style.display = 'block'; return; }
+        if (start > end) { errEl.textContent = '시작일은 종료일보다 늦을 수 없어요.'; errEl.style.display = 'block'; return; }
+        window.UI.closeModal();
+        onApply({ preset: 'custom', start: start, end: end });
+      });
+    });
   }
 
   function render() {
@@ -190,20 +227,40 @@
       });
     }
 
-    function bindDetail() {
-      view.querySelector('#sales-detail-back').addEventListener('click', function () {
-        paintHub();
-      });
-    }
-
     function paintHub() {
       view.innerHTML = hubHtml();
       bindHub();
     }
 
     function paintDetail(key) {
-      view.innerHTML = detailHtml(key);
-      bindDetail();
+      let range = { preset: 'today' };
+
+      function repaint() {
+        view.innerHTML = detailHtml(key, range);
+        bindDetail();
+      }
+
+      function bindDetail() {
+        view.querySelector('#sales-detail-back').addEventListener('click', function () {
+          paintHub();
+        });
+        const filterEl = view.querySelector('#sales-range-filter');
+        if (!filterEl) return;
+        filterEl.querySelectorAll('[data-range-preset]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            range = { preset: btn.getAttribute('data-range-preset') };
+            repaint();
+          });
+        });
+        const customBtn = filterEl.querySelector('#range-custom-btn');
+        if (customBtn) {
+          customBtn.addEventListener('click', function () {
+            openCustomRangeSheet(function (r) { range = r; repaint(); });
+          });
+        }
+      }
+
+      repaint();
     }
 
     paintHub();
