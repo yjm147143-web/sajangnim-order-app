@@ -36,7 +36,7 @@
     return (
       '<div class="dev-pin-title">🛠️ 개발자 도구</div>' +
       '<button type="button" id="dev-pin-add-orders">' +
-        '<span>🧾</span><span><div>새 주문 5개 추가</div><div class="dev-pin-sub">대기 탭에 임의의 주문 5건을 즉시 생성</div></span>' +
+        '<span>🧾</span><span><div>새 주문 5개 추가</div><div class="dev-pin-sub">대기 탭에 예약 주문 2건 + 현장 주문 3건 생성</div></span>' +
       '</button>' +
       '<button type="button" id="dev-pin-toggle-offline">' +
         '<span>' + (simulatedOffline ? '🟢' : '📶') + '</span>' +
@@ -83,9 +83,9 @@
             closeMenu();
             return;
           }
-          var created = window.MockApi.seedRandomOrders(user.storeId, 5);
+          var created = window.MockApi.seedRandomOrders(user.storeId, 5, 2);
           window.dispatchEvent(new CustomEvent('mock:orders-changed', { detail: { storeId: user.storeId } }));
-          window.UI.toast('새 주문 ' + created.length + '건을 추가했어요');
+          window.UI.toast('새 주문 ' + created.length + '건을 추가했어요 (예약 2 · 현장 3)');
           closeMenu();
         });
       }

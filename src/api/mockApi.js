@@ -236,7 +236,9 @@
   function getOrder(id) { return DB.orders.find(function (o) { return o.id === id; }); }
 
   // ---------------- 개발자 도구: 임의의 신규 주문 생성 (실시간 주문 유입 시뮬레이션) ----------------
-  function seedRandomOrders(storeId, count) {
+  // reservationCount: count건 중 예약 주문으로 만들 건수(나머지는 현장 주문)
+  function seedRandomOrders(storeId, count, reservationCount) {
+    reservationCount = Math.min(reservationCount || 0, count);
     const menuItems = DB.menuItems.filter(function (m) { return m.storeId === storeId && !m.soldOut; });
     if (!menuItems.length) return [];
     const existingNums = DB.orders
@@ -245,8 +247,10 @@
     let nextNo = (existingNums.length ? Math.max.apply(null, existingNums) : 1000) + 1;
     const phones = ['01011112222', '01022223333', '01033334444', '01044445555', '01055556666', '01066667777', '01077778888'];
     const payments = ['카드', '간편결제', '쿠폰'];
+    const sampleNotes = ['빨대는 안 주셔도 돼요', '얼음 적게 넣어주세요', '많이 매워도 괜찮아요', '포장해주세요'];
     const created = [];
     for (let i = 0; i < count; i++) {
+      const isReservation = i < reservationCount;
       const item = menuItems[Math.floor(Math.random() * menuItems.length)];
       const qty = 1 + Math.floor(Math.random() * 2);
       const order = {
@@ -261,7 +265,9 @@
         orderedAt: new Date().toISOString(), acceptedAt: null, doneAt: null,
         status: 'WAITING', called: false, calledCount: 0, completeCount: 0,
         canceled: false, cancelReason: null, cancelType: null,
-        isReservation: false, reservationTime: null, customerNote: null,
+        isReservation: isReservation,
+        reservationTime: isReservation ? new Date(Date.now() + (20 + Math.floor(Math.random() * 100)) * 60000).toISOString() : null,
+        customerNote: (!isReservation && Math.random() < 0.4) ? sampleNotes[Math.floor(Math.random() * sampleNotes.length)] : null,
       };
       DB.orders.unshift(order);
       created.push(order);
