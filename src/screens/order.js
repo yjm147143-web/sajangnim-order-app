@@ -78,7 +78,7 @@
     expandedAll = !expandedAll;
     bucketOverrides = {};
     const label = root.querySelector('#expand-all-toggle');
-    if (label) label.textContent = expandedAll ? '접기' : '펼쳐보기';
+    if (label) label.textContent = expandedAll ? '간단히 보기' : '펼쳐보기';
     updateList();
   }
 
@@ -200,7 +200,7 @@
       (showCheckbox ? '<input type="checkbox" data-action="bucket-select-all" data-bucket="' + group.key + '"' + (allSelected ? ' checked' : '') + (disabled ? ' disabled' : '') + ' />' : '') +
       '<span class="bucket-label">' + group.label + (group.isReservationGroup ? '' : ' (5분 단위)') + '</span>' +
       '</div>' +
-      '<div class="bucket-toggle-label" data-action="toggle-bucket-expand" data-bucket="' + group.key + '">' + (expanded ? '접기' : '펼쳐보기') + '</div>' +
+      '<div class="bucket-toggle-label" data-action="toggle-bucket-expand" data-bucket="' + group.key + '">' + (expanded ? '간단히 보기' : '펼쳐보기') + '</div>' +
       '</div>';
   }
 
@@ -557,7 +557,7 @@
       '<div style="display:flex; gap:8px;">' +
       '<button type="button" class="pill-btn" id="sort-btn" data-action="toggle-sort">' + sortLabel() + ' ▾</button>' +
       '<button type="button" class="pill-btn' + (menuFilter ? ' active' : '') + '" id="menu-filter-btn" data-action="open-menu-filter">' + (menuFilter ? '메뉴 · ' + esc(menuFilter) : '메뉴 필터') + '</button>' +
-      '<button type="button" class="pill-btn" id="expand-all-toggle" data-action="toggle-expand-all">' + (expandedAll ? '접기' : '펼쳐보기') + '</button>' +
+      '<button type="button" class="pill-btn" id="expand-all-toggle" data-action="toggle-expand-all">' + (expandedAll ? '간단히 보기' : '펼쳐보기') + '</button>' +
       '</div>' +
       '</div>' +
       '</div>' +
