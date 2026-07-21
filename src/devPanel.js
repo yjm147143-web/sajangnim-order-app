@@ -1,0 +1,157 @@
+/*
+ * 개발자 테스트 패널 (QA/데모용, 실제 제품 화면이 아님)
+ * 폰 목업(.device-frame) 바깥에 별도로 렌더링해, 주문을 추가해도 폰 화면 변화가
+ * 항상 같이 보이도록 한다.
+ * - 조건별 버튼(고객요청/주문유형/채널/주문번호유형/메뉴수/옵션)을 조합해 원하는
+ *   형태의 주문을 원하는 개수만큼 즉시 생성
+ * - 오프라인 시뮬레이션: window 'offline'/'online' 이벤트를 직접 발생시켜
+ *   order.js의 기존 오프라인 배너/버튼 비활성화 로직을 그대로 재사용
+ *   (오프라인 상태에서는 주문 추가 자체를 막는다 — 실제로도 네트워크가 끊기면
+ *   신규 주문이 들어올 수 없기 때문)
+ */
+(function () {
+  var STYLE = '' +
+    '#dev-panel-host{align-self:flex-start;}' +
+    '.dp-panel{width:260px;background:#15152b;border:2px dashed #7c5cff;border-radius:16px;' +
+    'padding:16px;box-sizing:border-box;max-height:874px;overflow-y:auto;font-family:inherit;}' +
+    '.dp-title{font-size:13px;font-weight:800;color:#c9baff;letter-spacing:0.3px;margin-bottom:14px;}' +
+    '.dp-group{margin-bottom:12px;}' +
+    '.dp-group-label{display:block;font-size:11px;font-weight:700;color:#8b8bab;margin-bottom:6px;}' +
+    '.dp-pill-row{display:flex;gap:6px;flex-wrap:wrap;}' +
+    '.dp-pill{background:#2a2a45;border:1px solid #45456b;color:#d8d8ea;font-size:12px;font-weight:700;' +
+    'padding:6px 12px;border-radius:999px;cursor:pointer;}' +
+    '.dp-pill.active{background:#7c5cff;border-color:#7c5cff;color:#fff;}' +
+    '.dp-add-btn{width:100%;background:#7c5cff;color:#fff;border:none;font-size:13px;font-weight:800;' +
+    'padding:12px 14px;border-radius:12px;cursor:pointer;margin-top:4px;}' +
+    '.dp-add-btn:active{opacity:0.85;}' +
+    '.dp-add-btn:disabled{background:#3a3a52;color:#8b8bab;cursor:not-allowed;}' +
+    '.dp-offline-hint{font-size:11px;color:#ff9a9a;margin-top:6px;line-height:1.4;}' +
+    '.dp-divider{height:1px;background:#2f2f4d;margin:14px 0;}' +
+    '.dp-offline-btn{width:100%;justify-content:center;}';
+
+  var devHasNote = false;
+  var devIsReservation = false;
+  var devChannel = 'QR';
+  var devIdentifierType = 'PICKUP';
+  var devMultiMenu = false;
+  var devHasOption = false;
+  var devCount = 1;
+  var devSimOffline = false;
+  var lastVisible = null;
+
+  function isOffline() { return devSimOffline; }
+
+  function currentOwnerContext() {
+    var user = window.MockApi.getCurrentUser();
+    if (!user || (user.role !== 'OWNER' && user.role !== 'STAFF')) return null;
+    return user;
+  }
+
+  function pillGroupHtml(label, options, current, action) {
+    return '<div class="dp-group">' +
+      '<span class="dp-group-label">' + label + '</span>' +
+      '<div class="dp-pill-row">' +
+      options.map(function (o) {
+        return '<button type="button" class="dp-pill' + (String(current) === o.v ? ' active' : '') + '" data-action="' + action + '" data-value="' + o.v + '">' + o.label + '</button>';
+      }).join('') +
+      '</div></div>';
+  }
+
+  function panelHtml() {
+    return '<div class="dp-panel">' +
+      '<div class="dp-title">🛠️ 테스트 주문 만들기</div>' +
+      pillGroupHtml('고객요청', [{ v: '0', label: '없음' }, { v: '1', label: '있음' }], devHasNote ? '1' : '0', 'dp-set-note') +
+      pillGroupHtml('주문유형', [{ v: '0', label: '현장' }, { v: '1', label: '예약' }], devIsReservation ? '1' : '0', 'dp-set-reservation') +
+      pillGroupHtml('주문채널', [{ v: 'QR', label: 'QR오더' }, { v: 'TABLET', label: '태블릿오더' }], devChannel, 'dp-set-channel') +
+      pillGroupHtml('주문번호', [{ v: 'PICKUP', label: '픽업번호' }, { v: 'SEAT', label: '좌석번호' }], devIdentifierType, 'dp-set-identifier') +
+      pillGroupHtml('메뉴수', [{ v: '0', label: '1개' }, { v: '1', label: '여러개' }], devMultiMenu ? '1' : '0', 'dp-set-multimenu') +
+      pillGroupHtml('옵션', [{ v: '0', label: '없음' }, { v: '1', label: '있음' }], devHasOption ? '1' : '0', 'dp-set-option') +
+      pillGroupHtml('개수', [1, 3, 5, 10].map(function (n) { return { v: String(n), label: n + '개' }; }), String(devCount), 'dp-set-count') +
+      '<button type="button" class="dp-add-btn" data-action="dp-add-order"' + (devSimOffline ? ' disabled' : '') + '>+ 주문 ' + devCount + '건 추가</button>' +
+      (devSimOffline ? '<div class="dp-offline-hint">📶 오프라인 상태에서는 신규 주문이 들어올 수 없어요</div>' : '') +
+      '<div class="dp-divider"></div>' +
+      '<button type="button" class="dp-pill dp-offline-btn' + (devSimOffline ? ' active' : '') + '" data-action="dp-toggle-offline">' + (devSimOffline ? '🟢 온라인으로 복귀' : '📶 오프라인 시뮬레이션') + '</button>' +
+      '</div>';
+  }
+
+  function render() {
+    var host = document.getElementById('dev-panel-host');
+    if (!host) return;
+    var user = currentOwnerContext();
+    host.innerHTML = user ? panelHtml() : '';
+  }
+
+  function addOrders() {
+    if (devSimOffline) {
+      window.UI.toast('오프라인 상태에서는 주문을 추가할 수 없어요');
+      return;
+    }
+    var user = currentOwnerContext();
+    if (!user) return;
+    var created = 0;
+    for (var i = 0; i < devCount; i++) {
+      var order = window.MockApi.createCustomOrder(user.storeId, {
+        hasNote: devHasNote,
+        isReservation: devIsReservation,
+        channel: devChannel,
+        identifierType: devIdentifierType,
+        multiMenu: devMultiMenu,
+        hasOption: devHasOption,
+      });
+      if (order) created += 1;
+    }
+    if (!created) { window.UI.toast('추가할 메뉴가 없어요'); return; }
+    window.dispatchEvent(new CustomEvent('mock:orders-changed', { detail: { storeId: user.storeId } }));
+    window.UI.toast('테스트 주문 ' + created + '건을 추가했어요');
+  }
+
+  function toggleOffline() {
+    devSimOffline = !devSimOffline;
+    window.dispatchEvent(new Event(devSimOffline ? 'offline' : 'online'));
+    window.UI.toast(devSimOffline ? '오프라인 상태를 시뮬레이션해요' : '온라인 상태로 되돌렸어요');
+    render();
+  }
+
+  function onClick(e) {
+    var target = e.target.closest('[data-action]');
+    if (!target) return;
+    var action = target.getAttribute('data-action');
+    var value = target.getAttribute('data-value');
+    if (action === 'dp-set-note') devHasNote = value === '1';
+    else if (action === 'dp-set-reservation') devIsReservation = value === '1';
+    else if (action === 'dp-set-channel') devChannel = value;
+    else if (action === 'dp-set-identifier') devIdentifierType = value;
+    else if (action === 'dp-set-multimenu') devMultiMenu = value === '1';
+    else if (action === 'dp-set-option') devHasOption = value === '1';
+    else if (action === 'dp-set-count') devCount = Number(value);
+    else if (action === 'dp-add-order') { addOrders(); return; }
+    else if (action === 'dp-toggle-offline') { toggleOffline(); return; }
+    else return;
+    render();
+  }
+
+  function checkVisibility() {
+    var visible = !!currentOwnerContext();
+    if (visible !== lastVisible) {
+      lastVisible = visible;
+      render();
+    }
+  }
+
+  function init() {
+    var style = document.createElement('style');
+    style.textContent = STYLE;
+    document.head.appendChild(style);
+    document.addEventListener('click', onClick);
+    render();
+    setInterval(checkVisibility, 800);
+  }
+
+  window.DevTools = { isOffline: isOffline };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
