@@ -441,7 +441,7 @@ select.input-field { appearance: none; background-image: url("data:image/svg+xml
 
 /* ---------- Chart ---------- */
 .chart-card { padding: var(--space-2) 0; }
-.bar-chart-row { display: flex; align-items: flex-end; gap: 6px; height: 120px; padding: 0 var(--space-5); overflow-x: auto; }
+.bar-chart-row { display: flex; align-items: flex-end; gap: 6px; height: 120px; padding: 34px var(--space-5) 0; overflow-x: auto; }
 .bar-chart-col { position: relative; flex: 1 0 32px; min-width: 32px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; height: 100%; cursor: pointer; }
 .bar-chart-tooltip { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 6px; background: var(--color-text-primary); color: var(--color-white); font-size: 11px; font-weight: 700; padding: 5px 9px; border-radius: 8px; white-space: nowrap; z-index: 10; pointer-events: none; }
 .bar-chart-tooltip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 4px solid transparent; border-top-color: var(--color-text-primary); }
