@@ -235,45 +235,51 @@
   // ---------------- Orders ----------------
   function getOrder(id) { return DB.orders.find(function (o) { return o.id === id; }); }
 
-  // ---------------- 개발자 도구: 임의의 신규 주문 생성 (실시간 주문 유입 시뮬레이션) ----------------
-  // reservationCount: count건 중 예약 주문으로 만들 건수(나머지는 현장 주문)
-  function seedRandomOrders(storeId, count, reservationCount) {
-    reservationCount = Math.min(reservationCount || 0, count);
+  // ---------------- 개발자 도구: 선택한 조건에 맞는 신규 주문 1건 생성 (실시간 주문 유입 시뮬레이션) ----------------
+  // opts: { hasNote, isReservation, channel: 'QR'|'TABLET', identifierType: 'PICKUP'|'SEAT' }
+  function createCustomOrder(storeId, opts) {
+    opts = opts || {};
     const menuItems = DB.menuItems.filter(function (m) { return m.storeId === storeId && !m.soldOut; });
-    if (!menuItems.length) return [];
-    const existingNums = DB.orders
-      .filter(function (o) { return o.storeId === storeId; })
-      .map(function (o) { return parseInt(o.pickupNo, 10) || 0; });
-    let nextNo = (existingNums.length ? Math.max.apply(null, existingNums) : 1000) + 1;
+    if (!menuItems.length) return null;
+    const identifierType = opts.identifierType === 'SEAT' ? 'SEAT' : 'PICKUP';
     const phones = ['01011112222', '01022223333', '01033334444', '01044445555', '01055556666', '01066667777', '01077778888'];
     const payments = ['카드', '간편결제', '쿠폰'];
     const sampleNotes = ['빨대는 안 주셔도 돼요', '얼음 적게 넣어주세요', '많이 매워도 괜찮아요', '포장해주세요'];
-    const created = [];
-    for (let i = 0; i < count; i++) {
-      const isReservation = i < reservationCount;
-      const item = menuItems[Math.floor(Math.random() * menuItems.length)];
-      const qty = 1 + Math.floor(Math.random() * 2);
-      const order = {
-        id: uid('order'), storeId: storeId,
-        paymentOrderNo: 'PG-' + Math.floor(800000 + Math.random() * 99999),
-        pickupNo: String(nextNo + i),
-        channel: Math.random() < 0.5 ? 'QR' : 'TABLET',
-        paymentMethod: payments[Math.floor(Math.random() * payments.length)],
-        amount: item.price * qty,
-        items: [{ menuName: item.name, optionNames: [], quantity: qty }],
-        customerContact: phones[Math.floor(Math.random() * phones.length)],
-        orderedAt: new Date().toISOString(), acceptedAt: null, doneAt: null,
-        status: 'WAITING', called: false, calledCount: 0, completeCount: 0,
-        canceled: false, cancelReason: null, cancelType: null,
-        isReservation: isReservation,
-        reservationTime: isReservation ? new Date(Date.now() + (20 + Math.floor(Math.random() * 100)) * 60000).toISOString() : null,
-        customerNote: (!isReservation && Math.random() < 0.4) ? sampleNotes[Math.floor(Math.random() * sampleNotes.length)] : null,
-      };
-      DB.orders.unshift(order);
-      created.push(order);
+    const seatCodes = ['A-3', 'A-12', 'B-2', 'B-7', 'C-1', 'D-5'];
+    const item = menuItems[Math.floor(Math.random() * menuItems.length)];
+    const qty = 1 + Math.floor(Math.random() * 2);
+    const isReservation = !!opts.isReservation;
+
+    let identifierValue;
+    if (identifierType === 'SEAT') {
+      identifierValue = seatCodes[Math.floor(Math.random() * seatCodes.length)];
+    } else {
+      const existingNums = DB.orders
+        .filter(function (o) { return o.storeId === storeId; })
+        .map(function (o) { return parseInt(o.pickupNo, 10) || 0; });
+      identifierValue = String((existingNums.length ? Math.max.apply(null, existingNums) : 1000) + 1);
     }
+
+    const order = {
+      id: uid('order'), storeId: storeId,
+      paymentOrderNo: 'PG-' + Math.floor(800000 + Math.random() * 99999),
+      pickupNo: identifierValue,
+      identifierType: identifierType,
+      channel: opts.channel === 'TABLET' ? 'TABLET' : 'QR',
+      paymentMethod: payments[Math.floor(Math.random() * payments.length)],
+      amount: item.price * qty,
+      items: [{ menuName: item.name, optionNames: [], quantity: qty }],
+      customerContact: phones[Math.floor(Math.random() * phones.length)],
+      orderedAt: new Date().toISOString(), acceptedAt: null, doneAt: null,
+      status: 'WAITING', called: false, calledCount: 0, completeCount: 0,
+      canceled: false, cancelReason: null, cancelType: null,
+      isReservation: isReservation,
+      reservationTime: isReservation ? new Date(Date.now() + (20 + Math.floor(Math.random() * 100)) * 60000).toISOString() : null,
+      customerNote: opts.hasNote ? sampleNotes[Math.floor(Math.random() * sampleNotes.length)] : null,
+    };
+    DB.orders.unshift(order);
     persist();
-    return created;
+    return order;
   }
 
   function getOrders(storeId, opts) {
@@ -639,7 +645,7 @@
     addMenuItem: addMenuItem, updateMenuItem: updateMenuItem, toggleSoldOut: toggleSoldOut, moveMenuItem: moveMenuItem,
     getStaffAccounts: getStaffAccounts, createStaffAccount: createStaffAccount, toggleStaffActive: toggleStaffActive,
     getOrder: getOrder, getOrders: getOrders, acceptOrder: acceptOrder, cancelOrder: cancelOrder,
-    seedRandomOrders: seedRandomOrders,
+    createCustomOrder: createCustomOrder,
     callCustomer: callCustomer, completeOrder: completeOrder, cancelPayment: cancelPayment,
     revertOrder: revertOrder, returnOrder: returnOrder, bulkAction: bulkAction,
     getSalesByChannel: getSalesByChannel, getSalesByPayment: getSalesByPayment, getSalesByHour: getSalesByHour,

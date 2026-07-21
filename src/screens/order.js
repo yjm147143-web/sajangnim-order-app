@@ -22,6 +22,14 @@
   let isOnline = true;
   let root = null;
 
+  // ---- 개발자 도구(테스트 주문 만들기) 상태 — 화면 재진입 시에도 유지 ----
+  let devBarOpen = false;
+  let devHasNote = false;
+  let devIsReservation = false;
+  let devChannel = 'QR';
+  let devIdentifierType = 'PICKUP';
+  let devSimOffline = false;
+
   const SCOPED_STYLE = '' +
     '.topbar-title { max-width: 56%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }' +
     '.order-card-payment-row { font-size: 13px; color: var(--color-text-secondary); font-weight: 600; margin-bottom: 8px; }' +
@@ -30,7 +38,18 @@
     '.reason-pill-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }' +
     '.reason-textarea { margin-top: 4px; }' +
     '.order-list.with-bulk-bar { padding-bottom: 88px; }' +
-    '#bulk-bar-slot:empty { display: none; }';
+    '#bulk-bar-slot:empty { display: none; }' +
+    '.dev-bar { background: #15152b; border-bottom: 2px dashed #7c5cff; flex-shrink: 0; }' +
+    '.dev-bar-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; font-size: 12px; font-weight: 800; color: #c9baff; cursor: pointer; letter-spacing: 0.3px; }' +
+    '.dev-bar-chevron { font-size: 10px; color: #7c5cff; }' +
+    '.dev-bar-body { padding: 0 20px 14px; display: flex; flex-direction: column; gap: 10px; }' +
+    '.dev-bar-group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }' +
+    '.dev-bar-group-label { font-size: 11px; font-weight: 700; color: #8b8bab; width: 56px; flex-shrink: 0; }' +
+    '.dev-bar-pill { background: #2a2a45; border: 1px solid #45456b; color: #d8d8ea; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 999px; cursor: pointer; }' +
+    '.dev-bar-pill.active { background: #7c5cff; border-color: #7c5cff; color: #fff; }' +
+    '.dev-bar-actions { display: flex; gap: 8px; margin-top: 2px; flex-wrap: wrap; }' +
+    '.dev-bar-add-btn { flex: 1; background: #7c5cff; color: #fff; border: none; font-size: 13px; font-weight: 800; padding: 10px 14px; border-radius: 12px; cursor: pointer; min-width: 160px; }' +
+    '.dev-bar-add-btn:active { opacity: 0.85; }';
 
   // ---------------- 탭 구성 ----------------
   // 대기 탭은 자동수락 여부(ON/OFF)와 무관하게 항상 노출한다.
@@ -105,6 +124,74 @@
     return '<div class="offline-banner">📶 오프라인 상태예요 · 네트워크가 연결되면 다시 사용할 수 있어요</div>';
   }
 
+  // ---------------- 개발자 도구: 테스트 주문 만들기 바 ----------------
+  function devPillGroupHtml(label, options, current, action) {
+    return '<div class="dev-bar-group">' +
+      '<span class="dev-bar-group-label">' + label + '</span>' +
+      options.map(function (o) {
+        return '<button type="button" class="dev-bar-pill' + (String(current) === o.v ? ' active' : '') + '" data-action="' + action + '" data-value="' + o.v + '">' + o.label + '</button>';
+      }).join('') +
+      '</div>';
+  }
+
+  function renderDevBarHtml() {
+    const bodyHtml = devBarOpen ? (
+      '<div class="dev-bar-body">' +
+      devPillGroupHtml('고객요청', [{ v: '0', label: '없음' }, { v: '1', label: '있음' }], devHasNote ? '1' : '0', 'dev-set-note') +
+      devPillGroupHtml('주문유형', [{ v: '0', label: '현장' }, { v: '1', label: '예약' }], devIsReservation ? '1' : '0', 'dev-set-reservation') +
+      devPillGroupHtml('주문채널', [{ v: 'QR', label: 'QR오더' }, { v: 'TABLET', label: '태블릿오더' }], devChannel, 'dev-set-channel') +
+      devPillGroupHtml('주문번호', [{ v: 'PICKUP', label: '픽업번호' }, { v: 'SEAT', label: '좌석번호' }], devIdentifierType, 'dev-set-identifier') +
+      '<div class="dev-bar-actions">' +
+      '<button type="button" class="dev-bar-add-btn" data-action="dev-add-order">+ 이 조건으로 주문 추가</button>' +
+      '<button type="button" class="dev-bar-pill' + (devSimOffline ? ' active' : '') + '" data-action="dev-toggle-offline">' + (devSimOffline ? '🟢 온라인으로 복귀' : '📶 오프라인 시뮬레이션') + '</button>' +
+      '</div>' +
+      '</div>'
+    ) : '';
+    return '<div class="dev-bar">' +
+      '<div class="dev-bar-header" data-action="dev-toggle-bar">🛠️ 테스트 주문 만들기<span class="dev-bar-chevron">' + (devBarOpen ? '▲' : '▼') + '</span></div>' +
+      bodyHtml +
+      '</div>';
+  }
+
+  function refreshDevBar() {
+    const slot = root.querySelector('#dev-bar-slot');
+    if (slot) slot.innerHTML = renderDevBarHtml();
+  }
+
+  function toggleDevBar() {
+    devBarOpen = !devBarOpen;
+    refreshDevBar();
+  }
+
+  function setDevOption(action, value) {
+    if (action === 'dev-set-note') devHasNote = value === '1';
+    else if (action === 'dev-set-reservation') devIsReservation = value === '1';
+    else if (action === 'dev-set-channel') devChannel = value;
+    else if (action === 'dev-set-identifier') devIdentifierType = value;
+    refreshDevBar();
+  }
+
+  function addDevOrder() {
+    const order = window.MockApi.createCustomOrder(storeId, {
+      hasNote: devHasNote,
+      isReservation: devIsReservation,
+      channel: devChannel,
+      identifierType: devIdentifierType,
+    });
+    if (!order) { window.UI.toast('추가할 메뉴가 없어요'); return; }
+    window.UI.toast('테스트 주문을 추가했어요');
+    updateList();
+  }
+
+  function toggleDevOffline() {
+    devSimOffline = !devSimOffline;
+    isOnline = navigator.onLine && !devSimOffline;
+    refreshOfflineBanner();
+    updateList();
+    refreshDevBar();
+    window.UI.toast(devSimOffline ? '오프라인 상태를 시뮬레이션해요' : '온라인 상태로 되돌렸어요');
+  }
+
   function renderCheckboxHtml(order, tabStatus, disabled) {
     if (tabStatus === 'DONE') return '';
     const checked = selectedIds.has(order.id) ? ' checked' : '';
@@ -148,7 +235,7 @@
     }
     html += '<div class="order-card-content-row">' +
       '<div class="order-card-menu-main">' + esc(mainMenuLabel(order)) + '</div>' +
-      '<div class="order-card-pickup-block"><div class="pickup-label">픽업번호</div><div class="pickup-value">' + esc(order.pickupNo) + '</div></div>' +
+      '<div class="order-card-pickup-block"><div class="pickup-label">' + (order.identifierType === 'SEAT' ? '좌석번호' : '픽업번호') + '</div><div class="pickup-value">' + esc(order.pickupNo) + '</div></div>' +
       '</div>';
     // 전체 펼쳐보기/접기: 접었을 때도 대표주문메뉴·고객연락처·픽업번호·액션버튼·주문시간/경과시간은 노출한다
     // 예약 주문은 접수시간/경과시간 대신 예약 시각만 볼드로 노출한다
@@ -431,8 +518,6 @@
 
   function onOffline() { isOnline = false; refreshOfflineBanner(); updateList(); }
   function onOnline() { isOnline = true; refreshOfflineBanner(); updateList(); }
-  // 개발자 도구에서 임의로 신규 주문을 추가했을 때 목록을 즉시 갱신한다.
-  function onMockDataChanged() { updateList(); }
 
   // ---------------- 이벤트 위임 ----------------
   function onRootClick(e) {
@@ -455,6 +540,10 @@
     else if (action === 'return-order') handleReturn(id);
     else if (action === 'bulk-accept') doBulkAccept();
     else if (action === 'bulk-complete') doBulkComplete();
+    else if (action === 'dev-toggle-bar') toggleDevBar();
+    else if (action === 'dev-set-note' || action === 'dev-set-reservation' || action === 'dev-set-channel' || action === 'dev-set-identifier') setDevOption(action, target.getAttribute('data-value'));
+    else if (action === 'dev-add-order') addDevOrder();
+    else if (action === 'dev-toggle-offline') toggleDevOffline();
     else if (action === 'bulk-call') doBulkCall();
   }
 
@@ -506,7 +595,7 @@
     selectedIds = new Set();
     expandedAll = true;
     bucketOverrides = {};
-    isOnline = navigator.onLine && !(window.DevTools && window.DevTools.isOffline());
+    isOnline = navigator.onLine && !devSimOffline;
 
     const disabled = !isOnline;
     const orders = fetchOrders();
@@ -514,6 +603,7 @@
 
     return '' +
       '<style>' + SCOPED_STYLE + '</style>' +
+      '<div id="dev-bar-slot">' + renderDevBarHtml() + '</div>' +
       '<div class="topbar">' +
       '<div class="topbar-side">' + window.UI.statusPillHtml(store.operatingStatus) + '</div>' +
       '<div class="topbar-title">' + esc(store.name) + '</div>' +
@@ -549,13 +639,11 @@
     root.addEventListener('input', onRootInput);
     window.addEventListener('offline', onOffline);
     window.addEventListener('online', onOnline);
-    window.addEventListener('mock:orders-changed', onMockDataChanged);
   }
 
   function unmount() {
     window.removeEventListener('offline', onOffline);
     window.removeEventListener('online', onOnline);
-    window.removeEventListener('mock:orders-changed', onMockDataChanged);
     root = null;
   }
 
