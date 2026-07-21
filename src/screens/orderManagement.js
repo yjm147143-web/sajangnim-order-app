@@ -1,7 +1,7 @@
 /*
  * 주문 관리 허브 화면 (설정 > 주문 관리)
- * - 주문 관련 세부 설정으로 진입하는 목록. 현재는 최소 주문 금액 설정 1개뿐이며,
- *   추후 주문 관련 설정이 늘어나면 이 화면에 항목을 추가한다.
+ * - 주문 관련 세부 설정으로 진입하는 목록. 추후 주문 관련 설정이 늘어나면
+ *   이 화면에 항목을 추가한다.
  */
 (function () {
   function render() {
@@ -14,6 +14,9 @@
       '<div class="screen-scroll">' +
         '<div class="settings-list-item" data-nav="minOrderAmount">' +
           '<div class="icon">💵</div><div class="label">최소 주문 금액 설정</div><div class="chevron">›</div>' +
+        '</div>' +
+        '<div class="settings-list-item" data-nav="orderChannelSettings">' +
+          '<div class="icon">🧾</div><div class="label">주문 방식 관리</div><div class="chevron">›</div>' +
         '</div>' +
       '</div>'
     );

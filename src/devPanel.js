@@ -25,6 +25,7 @@
     '.dp-pill{background:#2a2a45;border:1px solid #45456b;color:#d8d8ea;font-size:12px;font-weight:700;' +
     'padding:6px 12px;border-radius:999px;cursor:pointer;}' +
     '.dp-pill.active{background:#7c5cff;border-color:#7c5cff;color:#fff;}' +
+    '.dp-pill:disabled{opacity:0.35;cursor:not-allowed;}' +
     '.dp-actions-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}' +
     '.dp-add-btn{flex:1;min-width:160px;background:#7c5cff;color:#fff;border:none;font-size:13px;font-weight:800;' +
     'padding:12px 14px;border-radius:12px;cursor:pointer;}' +
@@ -58,31 +59,45 @@
     return user;
   }
 
-  function pillGroupHtml(label, options, current, action) {
+  function pillGroupHtml(label, options, current, action, disabledValues) {
+    disabledValues = disabledValues || [];
     return '<div class="dp-group">' +
       '<span class="dp-group-label">' + label + '</span>' +
       '<div class="dp-pill-row">' +
       options.map(function (o) {
-        return '<button type="button" class="dp-pill' + (String(current) === o.v ? ' active' : '') + '" data-action="' + action + '" data-value="' + o.v + '">' + o.label + '</button>';
+        var isDisabled = disabledValues.indexOf(o.v) !== -1;
+        return '<button type="button" class="dp-pill' + (String(current) === o.v ? ' active' : '') + '" data-action="' + action + '" data-value="' + o.v + '"' + (isDisabled ? ' disabled' : '') + '>' + o.label + '</button>';
       }).join('') +
       '</div></div>';
+  }
+
+  // 매장의 '주문 방식 관리' 설정에 따라, 현재 dev 상태가 허용되지 않는 값이면 되돌린다.
+  function clampDevState(channelSettings) {
+    if (!channelSettings.acceptReservationOrders && devIsReservation) devIsReservation = false;
+    if (!channelSettings.acceptSeatOrders && devIdentifierType === 'SEAT') devIdentifierType = 'PICKUP';
+    if (!channelSettings.acceptCustomerNotes && devHasNote) devHasNote = false;
   }
 
   function tabHtml() {
     return '<button type="button" class="dp-tab" data-action="dp-toggle-panel" aria-label="테스트 주문 만들기 열기">🛠️ 테스트 주문 만들기 열기</button>';
   }
 
-  function panelHtml() {
+  function panelHtml(user) {
+    var channelSettings = window.MockApi.getOrderChannelSettings(user.storeId);
+    clampDevState(channelSettings);
     return '<div class="dp-panel">' +
       '<div class="dp-panel-header">' +
       '<span class="dp-title">🛠️ 테스트 주문 만들기</span>' +
       '<button type="button" class="dp-collapse-btn" data-action="dp-toggle-panel" aria-label="접기">✕</button>' +
       '</div>' +
       '<div class="dp-groups">' +
-      pillGroupHtml('고객요청', [{ v: '0', label: '없음' }, { v: '1', label: '있음' }], devHasNote ? '1' : '0', 'dp-set-note') +
-      pillGroupHtml('주문유형', [{ v: '0', label: '현장' }, { v: '1', label: '예약' }], devIsReservation ? '1' : '0', 'dp-set-reservation') +
+      pillGroupHtml('고객요청', [{ v: '0', label: '없음' }, { v: '1', label: '있음' }], devHasNote ? '1' : '0', 'dp-set-note',
+        channelSettings.acceptCustomerNotes ? [] : ['1']) +
+      pillGroupHtml('주문유형', [{ v: '0', label: '현장' }, { v: '1', label: '예약' }], devIsReservation ? '1' : '0', 'dp-set-reservation',
+        channelSettings.acceptReservationOrders ? [] : ['1']) +
       pillGroupHtml('주문채널', [{ v: 'QR', label: 'QR오더' }, { v: 'TABLET', label: '태블릿오더' }], devChannel, 'dp-set-channel') +
-      pillGroupHtml('주문번호', [{ v: 'PICKUP', label: '호출번호' }, { v: 'SEAT', label: '좌석번호' }], devIdentifierType, 'dp-set-identifier') +
+      pillGroupHtml('주문번호', [{ v: 'PICKUP', label: '호출번호' }, { v: 'SEAT', label: '좌석번호' }], devIdentifierType, 'dp-set-identifier',
+        channelSettings.acceptSeatOrders ? [] : ['SEAT']) +
       pillGroupHtml('메뉴수', [{ v: '0', label: '1개' }, { v: '1', label: '여러개' }], devMultiMenu ? '1' : '0', 'dp-set-multimenu') +
       pillGroupHtml('옵션', [{ v: '0', label: '없음' }, { v: '1', label: '있음' }], devHasOption ? '1' : '0', 'dp-set-option') +
       pillGroupHtml('다회용기', [{ v: '0', label: '없음' }, { v: '1', label: '제공' }], devReusable ? '1' : '0', 'dp-set-reusable') +
@@ -108,7 +123,7 @@
     if (!host) return;
     var user = currentOwnerContext();
     if (!user) { host.innerHTML = ''; return; }
-    host.innerHTML = panelOpen ? panelHtml() : tabHtml();
+    host.innerHTML = panelOpen ? panelHtml(user) : tabHtml();
   }
 
   function addOrders() {

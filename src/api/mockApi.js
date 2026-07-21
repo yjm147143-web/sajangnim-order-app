@@ -103,6 +103,25 @@
     return getMinOrderSettings(storeId);
   }
 
+  // 주문 방식 관리: 예약 주문 / 딜리버리(좌석번호) 주문 / 고객 요청사항 수신 여부를 매장이 직접 켜고 끈다.
+  function getOrderChannelSettings(storeId) {
+    const store = findStore(storeId);
+    return {
+      acceptReservationOrders: store.acceptReservationOrders !== false,
+      acceptSeatOrders: store.acceptSeatOrders !== false,
+      acceptCustomerNotes: store.acceptCustomerNotes !== false,
+    };
+  }
+
+  function updateOrderChannelSettings(storeId, opts) {
+    const store = findStore(storeId);
+    if (opts.acceptReservationOrders != null) store.acceptReservationOrders = opts.acceptReservationOrders;
+    if (opts.acceptSeatOrders != null) store.acceptSeatOrders = opts.acceptSeatOrders;
+    if (opts.acceptCustomerNotes != null) store.acceptCustomerNotes = opts.acceptCustomerNotes;
+    persist();
+    return getOrderChannelSettings(storeId);
+  }
+
   // 마감 시 '처리중' 주문 전체를 완료 처리하고 매장을 마감 상태로 전환한다.
   function closeStoreAndCompleteProcessing(storeId) {
     const store = findStore(storeId);
@@ -254,12 +273,15 @@
     opts = opts || {};
     const menuItems = DB.menuItems.filter(function (m) { return m.storeId === storeId && !m.soldOut; });
     if (!menuItems.length) return null;
-    const identifierType = opts.identifierType === 'SEAT' ? 'SEAT' : 'PICKUP';
+    const store = findStore(storeId);
+    const channelSettings = getOrderChannelSettings(storeId);
+    const identifierType = (opts.identifierType === 'SEAT' && channelSettings.acceptSeatOrders) ? 'SEAT' : 'PICKUP';
     const phones = ['01011112222', '01022223333', '01033334444', '01044445555', '01055556666', '01066667777', '01077778888'];
     const payments = ['카드', '간편결제', '쿠폰'];
     const sampleNotes = ['빨대는 안 주셔도 돼요', '얼음 적게 넣어주세요', '많이 매워도 괜찮아요', '포장해주세요'];
     const seatCodes = ['A-3', 'A-12', 'B-2', 'B-7', 'C-1', 'D-5'];
-    const isReservation = !!opts.isReservation;
+    const isReservation = !!opts.isReservation && channelSettings.acceptReservationOrders;
+    const hasNote = !!opts.hasNote && channelSettings.acceptCustomerNotes;
 
     // 옵션 있음: 옵션 그룹(+ 옵션값)이 실제로 등록된 메뉴만 후보로 삼는다.
     const itemsWithOption = menuItems.filter(function (m) {
@@ -300,7 +322,6 @@
       identifierValue = String((existingNums.length ? Math.max.apply(null, existingNums) : 1000) + 1);
     }
 
-    const store = findStore(storeId);
     const autoAccept = !!(store && store.autoAcceptOrders);
 
     const order = {
@@ -319,7 +340,7 @@
       canceled: false, cancelReason: null, cancelType: null,
       isReservation: isReservation,
       reservationTime: isReservation ? new Date(Date.now() + (20 + Math.floor(Math.random() * 100)) * 60000).toISOString() : null,
-      customerNote: opts.hasNote ? sampleNotes[Math.floor(Math.random() * sampleNotes.length)] : null,
+      customerNote: hasNote ? sampleNotes[Math.floor(Math.random() * sampleNotes.length)] : null,
       isReusableContainer: !!opts.isReusableContainer,
       promoType: opts.promoType || null,
     };
@@ -684,6 +705,7 @@
     getStore: getStore, updateOperatingStatus: updateOperatingStatus, updateAutoAccept: updateAutoAccept,
     updateNotificationSettings: updateNotificationSettings,
     getMinOrderSettings: getMinOrderSettings, updateMinOrderSettings: updateMinOrderSettings,
+    getOrderChannelSettings: getOrderChannelSettings, updateOrderChannelSettings: updateOrderChannelSettings,
     closeStoreAndCompleteProcessing: closeStoreAndCompleteProcessing,
     getCustomerGuideSettings: getCustomerGuideSettings, updateCustomerGuideSettings: updateCustomerGuideSettings, getQrMenuInfo: getQrMenuInfo,
     getPermissionLockStatus: getPermissionLockStatus, setPermissionLockPassword: setPermissionLockPassword,

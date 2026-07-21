@@ -68,6 +68,7 @@
         cookHasHelper: false, cookHelperCount: 1, cookBufferMinutes: 2,
         notificationEnabled: true, notificationVolume: 70,
         minOrderAmountEnabled: false, minOrderAmount: 10000,
+        acceptReservationOrders: true, acceptSeatOrders: true, acceptCustomerNotes: true,
         permissionLockPassword: null,
         statusChangedAt: minutesAgo(180), ownerName: '김사장', ownerPhone: '01012345678',
         cashSalesAmount: 84000, cashOrderCount: 6,
