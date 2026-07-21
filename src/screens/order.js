@@ -143,8 +143,10 @@
     const checkboxHtml = renderCheckboxHtml(order, tabStatus, disabled);
     const channelHtml = expanded ? window.UI.channelBadgeHtml(order.channel) : '';
     const reservationHtml = (expanded && order.isReservation) ? window.UI.reservationBadgeHtml() : '';
-    if (checkboxHtml || channelHtml || reservationHtml) {
-      html += '<div class="order-card-header-row">' + checkboxHtml + channelHtml + reservationHtml + '</div>';
+    const reusableHtml = (expanded && order.isReusableContainer) ? window.UI.reusableContainerBadgeHtml() : '';
+    const promoHtml = expanded ? window.UI.promoBadgeHtml(order.promoType) : '';
+    if (checkboxHtml || channelHtml || reservationHtml || reusableHtml || promoHtml) {
+      html += '<div class="order-card-header-row">' + checkboxHtml + channelHtml + reservationHtml + reusableHtml + promoHtml + '</div>';
     }
     if (expanded) {
       html += '<div class="order-card-payno-row">PG주문번호 ' + esc(order.paymentOrderNo) + '</div>';

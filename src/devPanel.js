@@ -43,6 +43,8 @@
   var devIdentifierType = 'PICKUP';
   var devMultiMenu = false;
   var devHasOption = false;
+  var devReusable = false;
+  var devPromoType = '';
   var devCount = 1;
   var devSimOffline = false;
   var panelOpen = false;
@@ -83,6 +85,14 @@
       pillGroupHtml('주문번호', [{ v: 'PICKUP', label: '픽업번호' }, { v: 'SEAT', label: '좌석번호' }], devIdentifierType, 'dp-set-identifier') +
       pillGroupHtml('메뉴수', [{ v: '0', label: '1개' }, { v: '1', label: '여러개' }], devMultiMenu ? '1' : '0', 'dp-set-multimenu') +
       pillGroupHtml('옵션', [{ v: '0', label: '없음' }, { v: '1', label: '있음' }], devHasOption ? '1' : '0', 'dp-set-option') +
+      pillGroupHtml('다회용기', [{ v: '0', label: '없음' }, { v: '1', label: '제공' }], devReusable ? '1' : '0', 'dp-set-reusable') +
+      pillGroupHtml('프로모션', [
+        { v: '', label: '없음' },
+        { v: 'GROUP_COUPON', label: '쿠폰(그룹)' },
+        { v: 'STORE_COUPON', label: '쿠폰(매장)' },
+        { v: 'HAPPY_HOUR', label: '해피아워' },
+        { v: 'FIRST_COME', label: '선착순' },
+      ], devPromoType, 'dp-set-promo') +
       pillGroupHtml('개수', [1, 3, 5, 10].map(function (n) { return { v: String(n), label: n + '개' }; }), String(devCount), 'dp-set-count') +
       '</div>' +
       '<div class="dp-actions-row">' +
@@ -117,6 +127,8 @@
         identifierType: devIdentifierType,
         multiMenu: devMultiMenu,
         hasOption: devHasOption,
+        isReusableContainer: devReusable,
+        promoType: devPromoType || null,
       });
       if (order) created += 1;
     }
@@ -143,6 +155,8 @@
     else if (action === 'dp-set-identifier') devIdentifierType = value;
     else if (action === 'dp-set-multimenu') devMultiMenu = value === '1';
     else if (action === 'dp-set-option') devHasOption = value === '1';
+    else if (action === 'dp-set-reusable') devReusable = value === '1';
+    else if (action === 'dp-set-promo') devPromoType = value;
     else if (action === 'dp-set-count') devCount = Number(value);
     else if (action === 'dp-add-order') { addOrders(); return; }
     else if (action === 'dp-toggle-offline') { toggleOffline(); return; }

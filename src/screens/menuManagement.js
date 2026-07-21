@@ -51,6 +51,7 @@
           '<div class="menu-row-name">' + esc(item.name) +
             (item.soldOut ? ' <span class="badge badge-danger-soft">품절</span>' : '') +
             (item.exposed === false ? ' <span class="badge badge-neutral">미노출</span>' : '') +
+            (item.promoType ? ' ' + window.UI.promoBadgeHtml(item.promoType) : '') +
           '</div>' +
           '<div class="menu-row-sub">' + esc(catName) + (item.description ? ' · ' + esc(item.description) : '') + '</div>' +
           '<div class="menu-row-price">' + money(item.price) + ' · 재고 ' + (item.stockQuantity != null ? item.stockQuantity + '개' : '-') + '</div>' +
@@ -173,6 +174,7 @@
         origin: item.origin || '',
         nutritionInfo: item.nutritionInfo || '',
         allergyInfo: item.allergyInfo || '',
+        promoType: item.promoType || '',
         stockQuantity: item.stockQuantity != null ? item.stockQuantity : '',
         autoSoldoutEnabled: item.autoSoldoutEnabled !== false,
         exposed: item.exposed !== false,
@@ -194,6 +196,7 @@
       origin: '',
       nutritionInfo: '',
       allergyInfo: '',
+      promoType: '',
       stockQuantity: '',
       autoSoldoutEnabled: true,
       exposed: true,
@@ -315,6 +318,7 @@
       origin: (state.origin || '').trim(),
       nutritionInfo: (state.nutritionInfo || '').trim(),
       allergyInfo: (state.allergyInfo || '').trim(),
+      promoType: state.promoType || null,
       stockQuantity: state.stockQuantity === '' ? 0 : Number(state.stockQuantity),
       autoSoldoutEnabled: !!state.autoSoldoutEnabled,
       exposed: !!state.exposed,
@@ -352,6 +356,7 @@
         '.menu-image-thumb img{width:100%;height:100%;object-fit:cover;}' +
         '.menu-image-upload-actions{display:flex;flex-direction:column;align-items:flex-start;gap:4px;}' +
         '.menu-image-upload-actions label.btn{cursor:pointer;}' +
+        '.promo-pill-row{display:flex;gap:6px;flex-wrap:wrap;}' +
       '</style>' +
       '<div class="topbar">' +
         '<div class="topbar-side"><button type="button" class="icon-btn" id="edit-back">←</button></div>' +
@@ -416,6 +421,22 @@
           '<div class="input-group">' +
             '<div class="input-label">알레르기 정보 (선택)</div>' +
             '<textarea class="input-field" id="f-allergy" placeholder="예: 우유, 밀, 대두 함유">' + esc(state.allergyInfo) + '</textarea>' +
+          '</div>' +
+
+          '<div class="input-group">' +
+            '<div class="input-label">프로모션 (선택)</div>' +
+            '<div class="promo-pill-row">' +
+            [
+              { v: '', label: '없음' },
+              { v: 'GROUP_COUPON', label: '쿠폰(그룹)' },
+              { v: 'STORE_COUPON', label: '쿠폰(매장)' },
+              { v: 'HAPPY_HOUR', label: '해피아워' },
+              { v: 'FIRST_COME', label: '선착순' },
+            ].map(function (o) {
+              return '<button type="button" class="pill-btn' + (state.promoType === o.v ? ' active' : '') + '" data-action="set-promo" data-value="' + o.v + '">' + o.label + '</button>';
+            }).join('') +
+            '</div>' +
+            '<span class="menu-edit-subcaption">이 메뉴가 포함된 주문 카드에 프로모션 뱃지로 노출돼요</span>' +
           '</div>' +
 
           '<div class="input-group">' +
@@ -498,6 +519,15 @@
     root.querySelector('#f-nutrition').addEventListener('input', function (e) { state.nutritionInfo = e.target.value; updatePreview(); });
     root.querySelector('#f-allergy').addEventListener('input', function (e) { state.allergyInfo = e.target.value; updatePreview(); });
     root.querySelector('#f-stock').addEventListener('input', function (e) { state.stockQuantity = e.target.value; updatePreview(); });
+
+    root.querySelectorAll('[data-action="set-promo"]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        state.promoType = btn.getAttribute('data-value');
+        root.querySelectorAll('[data-action="set-promo"]').forEach(function (b) {
+          b.classList.toggle('active', b.getAttribute('data-value') === state.promoType);
+        });
+      });
+    });
 
     function updateImageUI() {
       root.querySelector('#menu-image-thumb').innerHTML = state.imageUrl

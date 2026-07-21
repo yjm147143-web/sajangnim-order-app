@@ -236,7 +236,8 @@
   function getOrder(id) { return DB.orders.find(function (o) { return o.id === id; }); }
 
   // ---------------- 개발자 도구: 선택한 조건에 맞는 신규 주문 1건 생성 (실시간 주문 유입 시뮬레이션) ----------------
-  // opts: { hasNote, isReservation, channel: 'QR'|'TABLET', identifierType: 'PICKUP'|'SEAT', multiMenu, hasOption }
+  // opts: { hasNote, isReservation, channel: 'QR'|'TABLET', identifierType: 'PICKUP'|'SEAT', multiMenu, hasOption,
+  //         isReusableContainer, promoType: null|'GROUP_COUPON'|'STORE_COUPON'|'HAPPY_HOUR'|'FIRST_COME' }
   function createCustomOrder(storeId, opts) {
     opts = opts || {};
     const menuItems = DB.menuItems.filter(function (m) { return m.storeId === storeId && !m.soldOut; });
@@ -287,6 +288,9 @@
       identifierValue = String((existingNums.length ? Math.max.apply(null, existingNums) : 1000) + 1);
     }
 
+    const store = findStore(storeId);
+    const autoAccept = !!(store && store.autoAcceptOrders);
+
     const order = {
       id: uid('order'), storeId: storeId,
       paymentOrderNo: 'PG-' + Math.floor(800000 + Math.random() * 99999),
@@ -297,12 +301,15 @@
       amount: amount,
       items: lines,
       customerContact: phones[Math.floor(Math.random() * phones.length)],
-      orderedAt: new Date().toISOString(), acceptedAt: null, doneAt: null,
-      status: 'WAITING', called: false, calledCount: 0, completeCount: 0,
+      orderedAt: new Date().toISOString(),
+      acceptedAt: autoAccept ? new Date().toISOString() : null, doneAt: null,
+      status: autoAccept ? 'PROCESSING' : 'WAITING', called: false, calledCount: 0, completeCount: 0,
       canceled: false, cancelReason: null, cancelType: null,
       isReservation: isReservation,
       reservationTime: isReservation ? new Date(Date.now() + (20 + Math.floor(Math.random() * 100)) * 60000).toISOString() : null,
       customerNote: opts.hasNote ? sampleNotes[Math.floor(Math.random() * sampleNotes.length)] : null,
+      isReusableContainer: !!opts.isReusableContainer,
+      promoType: opts.promoType || null,
     };
     DB.orders.unshift(order);
     persist();

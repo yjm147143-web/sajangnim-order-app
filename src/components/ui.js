@@ -82,6 +82,17 @@
     return '<span class="badge badge-reservation">📅 예약</span>';
   }
 
+  function reusableContainerBadgeHtml() {
+    return '<span class="badge badge-success-soft">♻️ 다회용기</span>';
+  }
+
+  const PROMO_LABELS = { GROUP_COUPON: '쿠폰(그룹)', STORE_COUPON: '쿠폰(매장)', HAPPY_HOUR: '해피아워', FIRST_COME: '선착순' };
+  function promoLabel(promoType) { return PROMO_LABELS[promoType] || ''; }
+  function promoBadgeHtml(promoType) {
+    const label = promoLabel(promoType);
+    return label ? '<span class="badge badge-warning-soft">' + label + '</span>' : '';
+  }
+
   function operatingStatusMeta(status) {
     if (status === 'OPEN') return { label: '영업 중', cls: 'open', dot: '🟢' };
     if (status === 'PAUSED') return { label: '일시중지', cls: 'paused', dot: '🟠' };
@@ -320,6 +331,7 @@
     isPhoneSuspicious: isPhoneSuspicious, formatContact: formatContact,
     bucketKeyOf: bucketKeyOf, bucketLabel: bucketLabel, groupByBucket: groupByBucket,
     channelBadgeHtml: channelBadgeHtml, reservationBadgeHtml: reservationBadgeHtml, operatingStatusMeta: operatingStatusMeta, statusPillHtml: statusPillHtml,
+    reusableContainerBadgeHtml: reusableContainerBadgeHtml, promoLabel: promoLabel, promoBadgeHtml: promoBadgeHtml,
     toast: toast, showModal: showModal, closeModal: closeModal, confirmModal: confirmModal, showBottomSheet: showBottomSheet,
     requirePasswordGate: requirePasswordGate,
     barChartHtml: barChartHtml, donutChartHtml: donutChartHtml, rankListHtml: rankListHtml, salesChartHtml: salesChartHtml,
