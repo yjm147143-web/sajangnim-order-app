@@ -368,7 +368,6 @@ select.input-field { appearance: none; background-image: url("data:image/svg+xml
   margin-bottom: var(--space-3);
 }
 .order-card.canceled { background: var(--color-accent-red-bg); border: 1.5px solid var(--color-accent-red); }
-.order-card.called { background: #eaf2ff; border: 1px solid #cfe3ff; }
 
 .order-card-header-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; row-gap: 6px; margin-bottom: var(--space-3); }
 .order-checkbox-label { display: flex; align-items: center; flex-shrink: 0; }

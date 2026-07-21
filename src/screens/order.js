@@ -137,7 +137,7 @@
   function renderOrderCard(order, tabStatus, disabled) {
     const bucketKey = order.isReservation ? 'RESERVED' : window.UI.bucketKeyOf(order.orderedAt);
     const expanded = isBucketExpanded(bucketKey);
-    const cls = 'order-card' + (order.canceled ? ' canceled' : '') + (order.called ? ' called' : '');
+    const cls = 'order-card' + (order.canceled ? ' canceled' : '');
     let html = '<div class="' + cls + '">';
     const checkboxHtml = renderCheckboxHtml(order, tabStatus, disabled);
     const channelHtml = expanded ? window.UI.channelBadgeHtml(order.channel) : '';
