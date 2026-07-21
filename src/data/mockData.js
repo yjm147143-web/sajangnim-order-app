@@ -53,8 +53,6 @@
   function buildSeed() {
     const users = [
       { id: 'user-owner-1', role: 'OWNER', loginId: 'owner', password: '1234', name: '김사장', storeId: 'store-1' },
-      { id: 'user-staff-1', role: 'STAFF', loginId: 'staff1', password: '1234', name: '박직원', phone: '01011112222', email: 'staff1@example.com', storeId: 'store-1', active: true, periodType: 'ALWAYS', periodStart: null, periodEnd: null },
-      { id: 'user-staff-2', role: 'STAFF', loginId: 'staff2', password: '1234', name: '이직원', phone: '01033334444', email: 'staff2@example.com', storeId: 'store-1', active: false, periodType: 'RANGE', periodStart: '2026-07-01', periodEnd: '2026-07-31' },
       { id: 'user-manager-1', role: 'EVENT_MANAGER', loginId: 'manager', password: '1234', name: '최담당', eventIds: ['event-1', 'event-2'] },
     ];
 

@@ -190,12 +190,8 @@
     });
   }
 
-  // ---------------- 권한 잠금 비밀번호 확인 (직원 계정 전용 게이트) ----------------
-  // storeId에 권한 잠금 비밀번호가 설정되어 있지 않으면 onSuccess를 바로 호출한다.
-  // 설정되어 있으면 비밀번호 확인 모달을 띄우고, 정답을 입력해야만 onSuccess를 호출한다.
-  function requirePasswordGate(storeId, label, onSuccess) {
-    const status = window.MockApi.getPermissionLockStatus(storeId);
-    if (!status.isSet) { onSuccess(); return; }
+  // ---------------- 권한 잠금 비밀번호 확인 (사장님 계정을 여러 사람이 함께 쓸 때의 민감 기능 게이트) ----------------
+  function showLockPasswordModal(storeId, label, onSuccess) {
     const host = document.getElementById('modal-host');
     host.innerHTML =
       '<div class="modal-overlay" id="lock-gate-modal">' +
@@ -237,6 +233,22 @@
       input.classList.remove('error');
       document.getElementById('lock-gate-error').textContent = '';
     });
+  }
+
+  // scopeKey에 해당하는 보호 항목이 켜져 있지 않으면(잠금 자체가 꺼져 있거나, 이 항목만 꺼져 있으면) onSuccess를 바로 호출한다.
+  // 켜져 있으면 비밀번호 확인 모달을 띄우고, 정답을 입력해야만 onSuccess를 호출한다.
+  function requirePasswordGate(storeId, scopeKey, label, onSuccess) {
+    const status = window.MockApi.getPermissionLockStatus(storeId);
+    if (!status.isSet || !status.scopes[scopeKey]) { onSuccess(); return; }
+    showLockPasswordModal(storeId, label, onSuccess);
+  }
+
+  // 보호 항목과 무관하게, 잠금이 설정되어 있으면 항상 재확인을 요구한다.
+  // 잠금 해제 · 비밀번호 변경 · 보호 항목 변경처럼 잠금 설정 자체를 건드리는 동작에 사용한다.
+  function requireLockReauth(storeId, label, onSuccess) {
+    const status = window.MockApi.getPermissionLockStatus(storeId);
+    if (!status.isSet) { onSuccess(); return; }
+    showLockPasswordModal(storeId, label, onSuccess);
   }
 
   // ---------------- Bottom Sheet ----------------
@@ -333,7 +345,7 @@
     channelBadgeHtml: channelBadgeHtml, reservationBadgeHtml: reservationBadgeHtml, operatingStatusMeta: operatingStatusMeta, statusPillHtml: statusPillHtml,
     reusableContainerBadgeHtml: reusableContainerBadgeHtml, promoLabel: promoLabel, promoBadgeHtml: promoBadgeHtml,
     toast: toast, showModal: showModal, closeModal: closeModal, confirmModal: confirmModal, showBottomSheet: showBottomSheet,
-    requirePasswordGate: requirePasswordGate,
+    requirePasswordGate: requirePasswordGate, requireLockReauth: requireLockReauth,
     barChartHtml: barChartHtml, donutChartHtml: donutChartHtml, rankListHtml: rankListHtml, salesChartHtml: salesChartHtml,
     playNotificationPreview: playNotificationPreview,
   };

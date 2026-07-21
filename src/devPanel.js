@@ -54,7 +54,7 @@
 
   function currentOwnerContext() {
     var user = window.MockApi.getCurrentUser();
-    if (!user || (user.role !== 'OWNER' && user.role !== 'STAFF')) return null;
+    if (!user || user.role !== 'OWNER') return null;
     return user;
   }
 

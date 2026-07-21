@@ -2,7 +2,7 @@
  * 사장님 설정 메인 화면
  * - 영업상태 변경 (개점/일시중지/마감)
  * - 자동수락 여부 토글
- * - 메뉴관리 / 손님 안내 설정 / 매출조회 / 직원계정관리 / QR메뉴판 진입
+ * - 메뉴관리 / 주문 관리 / 손님 안내 설정 / 매출조회 / 권한 잠금 설정 / QR메뉴판 진입
  * - 로그아웃
  */
 (function () {
@@ -84,8 +84,8 @@
       '<div class="settings-list-item" data-nav="sales">' +
         '<div class="icon">💰</div><div class="label">매출 조회</div><div class="chevron">›</div>' +
       '</div>' +
-      '<div class="settings-list-item" data-nav="staffAccounts">' +
-        '<div class="icon">👥</div><div class="label">직원 계정 관리</div><div class="chevron">›</div>' +
+      '<div class="settings-list-item" data-nav="permissionLock">' +
+        '<div class="icon">🔐</div><div class="label">권한 잠금 설정</div><div class="chevron">›</div>' +
       '</div>' +
       '<div class="settings-list-item" data-nav="qrMenu">' +
         '<div class="icon">📱</div><div class="label">QR 메뉴판 보기</div><div class="chevron">›</div>' +
@@ -160,11 +160,7 @@
             refresh();
           }
 
-          if (user.role === 'STAFF') {
-            window.UI.requirePasswordGate(storeId, '영업상태 변경', applyStatusChange);
-          } else {
-            applyStatusChange();
-          }
+          window.UI.requirePasswordGate(storeId, 'statusChange', '영업상태 변경', applyStatusChange);
         });
       });
 
@@ -228,13 +224,14 @@
         });
       }
 
-      var GATED_NAV = { sales: '매출 조회', staffAccounts: '직원 계정 관리' };
+      var GATED_NAV = { sales: { scopeKey: 'sales', label: '매출 조회' } };
       wrap.querySelectorAll('[data-nav]').forEach(function (row) {
         row.addEventListener('click', function () {
           var target = row.getAttribute('data-nav');
           function proceed() { window.Router.showScreen(target, {}); }
-          if (user.role === 'STAFF' && GATED_NAV[target]) {
-            window.UI.requirePasswordGate(storeId, GATED_NAV[target], proceed);
+          var gate = GATED_NAV[target];
+          if (gate) {
+            window.UI.requirePasswordGate(storeId, gate.scopeKey, gate.label, proceed);
           } else {
             proceed();
           }

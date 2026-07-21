@@ -1,8 +1,7 @@
 /*
  * 사장님 주문 접수 화면 (order)
  * 대기 / 처리중 / 완료 탭 기반의 주문 카드 보드.
- * OWNER/STAFF 공통 진입 화면 — 주문 처리와 설정 진입 모두 둘 다 가능하나,
- * STAFF가 반품 처리를 할 때는 사장님이 '직원 계정 관리 > 권한 잠금 설정'에서 비밀번호를 설정해둔 경우 비밀번호 확인이 필요하다.
+ * '설정 > 권한 잠금 설정'에서 결제 취소 항목을 보호 중이면, 결제 취소 시 비밀번호 확인이 필요하다.
  */
 (function () {
   const esc = window.UI.escapeHtml;
@@ -418,11 +417,7 @@
         updateList();
       });
     }
-    if (user.role === 'STAFF') {
-      window.UI.requirePasswordGate(storeId, '결제 취소', proceed);
-    } else {
-      proceed();
-    }
+    window.UI.requirePasswordGate(storeId, 'paymentCancel', '결제 취소', proceed);
   }
 
   function doBulkAccept() {

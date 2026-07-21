@@ -36,9 +36,7 @@
     if (!password) return { ok: false, message: '비밀번호를 입력해주세요.' };
     const user = findUser(loginId);
     if (!user || user.password !== password) return { ok: false, message: '아이디 또는 비밀번호가 올바르지 않아요.' };
-    if (user.role === 'STAFF' && user.active === false) return { ok: false, message: '아이디 또는 비밀번호가 올바르지 않아요.' };
-    const boardRole = user.role === 'STAFF' ? 'OWNER' : user.role;
-    if (boardRole !== role) {
+    if (user.role !== role) {
       return { ok: false, message: role === 'OWNER' ? '사장님 계정이 아닙니다' : '행사 담당자 계정이 아닙니다' };
     }
     setSession(user.id);
@@ -151,15 +149,28 @@
     return { url: window.AppConfig.QR_ORDER_BASE_URL + storeId, storeName: store.name };
   }
 
-  // ---------------- 권한 잠금 (직원 계정의 특정 기능 진입 시 비밀번호 요구) ----------------
+  // ---------------- 권한 잠금 (사장님 계정 하나를 여러 사람이 함께 쓸 때, 선택한 민감 기능만 비밀번호로 보호) ----------------
+  const DEFAULT_LOCK_SCOPES = { sales: false, statusChange: false, paymentCancel: false };
+
   function getPermissionLockStatus(storeId) {
     const store = findStore(storeId);
-    return { isSet: !!store.permissionLockPassword };
+    return {
+      isSet: !!store.permissionLockPassword,
+      scopes: store.permissionLockScopes || Object.assign({}, DEFAULT_LOCK_SCOPES),
+    };
   }
 
-  function setPermissionLockPassword(storeId, password) {
+  function setPermissionLockPassword(storeId, password, scopes) {
     const store = findStore(storeId);
     store.permissionLockPassword = password;
+    store.permissionLockScopes = scopes || { sales: true, statusChange: true, paymentCancel: true };
+    persist();
+    return getPermissionLockStatus(storeId);
+  }
+
+  function updatePermissionLockScopes(storeId, scopes) {
+    const store = findStore(storeId);
+    store.permissionLockScopes = scopes;
     persist();
     return getPermissionLockStatus(storeId);
   }
@@ -167,6 +178,7 @@
   function clearPermissionLockPassword(storeId) {
     const store = findStore(storeId);
     store.permissionLockPassword = null;
+    store.permissionLockScopes = null;
     persist();
     return getPermissionLockStatus(storeId);
   }
@@ -228,25 +240,6 @@
     const tmp = item.sortOrder; item.sortOrder = other.sortOrder; other.sortOrder = tmp;
     persist();
     return item;
-  }
-
-  // ---------------- Staff ----------------
-  function getStaffAccounts(storeId) {
-    return DB.users.filter(function (u) { return u.role === 'STAFF' && u.storeId === storeId; });
-  }
-
-  function createStaffAccount(storeId, payload) {
-    const user = Object.assign({ id: uid('user'), role: 'STAFF', storeId: storeId, active: true, periodType: 'ALWAYS', periodStart: null, periodEnd: null }, payload);
-    DB.users.push(user);
-    persist();
-    return user;
-  }
-
-  function toggleStaffActive(id, active) {
-    const user = DB.users.find(function (u) { return u.id === id; });
-    user.active = active;
-    persist();
-    return user;
   }
 
   // ---------------- Orders ----------------
@@ -692,10 +685,10 @@
     closeStoreAndCompleteProcessing: closeStoreAndCompleteProcessing,
     getCustomerGuideSettings: getCustomerGuideSettings, updateCustomerGuideSettings: updateCustomerGuideSettings, getQrMenuInfo: getQrMenuInfo,
     getPermissionLockStatus: getPermissionLockStatus, setPermissionLockPassword: setPermissionLockPassword,
+    updatePermissionLockScopes: updatePermissionLockScopes,
     clearPermissionLockPassword: clearPermissionLockPassword, verifyPermissionLockPassword: verifyPermissionLockPassword,
     getCategories: getCategories, getMenuItems: getMenuItems, getMenuItem: getMenuItem,
     addMenuItem: addMenuItem, updateMenuItem: updateMenuItem, toggleSoldOut: toggleSoldOut, moveMenuItem: moveMenuItem,
-    getStaffAccounts: getStaffAccounts, createStaffAccount: createStaffAccount, toggleStaffActive: toggleStaffActive,
     getOrder: getOrder, getOrders: getOrders, acceptOrder: acceptOrder, cancelOrder: cancelOrder,
     createCustomOrder: createCustomOrder,
     callCustomer: callCustomer, completeOrder: completeOrder, cancelPayment: cancelPayment,
