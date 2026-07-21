@@ -2,7 +2,7 @@
  * 사장님 설정 메인 화면
  * - 영업상태 변경 (개점/일시중지/마감)
  * - 자동수락 여부 토글
- * - 메뉴관리 / 주문 관리 / 손님 안내 설정 / 매출조회 / 권한 잠금 설정 / QR메뉴판 진입
+ * - 메뉴관리 / 주문 관리 / 고객 대기 관리 / 매출조회 / 권한 잠금 설정 / QR메뉴판 진입
  * - 로그아웃
  */
 (function () {
@@ -79,7 +79,7 @@
         '<div class="icon">📦</div><div class="label">주문 관리</div><div class="chevron">›</div>' +
       '</div>' +
       '<div class="settings-list-item" data-nav="customerGuideSettings">' +
-        '<div class="icon">📢</div><div class="label">손님 안내 설정</div><div class="chevron">›</div>' +
+        '<div class="icon">📢</div><div class="label">고객 대기 관리</div><div class="chevron">›</div>' +
       '</div>' +
       '<div class="settings-list-item" data-nav="sales">' +
         '<div class="icon">💰</div><div class="label">매출 조회</div><div class="chevron">›</div>' +

@@ -27,8 +27,9 @@
             return '<button type="button" class="moa-preset-btn' + (amount === p ? ' on' : '') + '" data-preset="' + p + '">' + p.toLocaleString() + '원</button>';
           }).join('') +
         '</div>' +
+        '<div class="moa-input-label">위 금액에 없다면 아래 칸에 직접 입력할 수 있어요</div>' +
         '<div class="moa-input-row">' +
-          '<input type="number" min="0" step="100" id="moa-amount-input" class="moa-amount-input" value="' + amount + '" />' +
+          '<input type="number" min="0" step="100" id="moa-amount-input" class="moa-amount-input" placeholder="직접 입력" value="' + amount + '" />' +
           '<span class="moa-input-unit">원</span>' +
         '</div>' +
         '<div class="moa-hint" id="moa-hint"></div>'
@@ -51,6 +52,7 @@
         '.moa-preset-btn{flex:1 0 calc(50% - 4px);padding:12px 8px;border:1.5px solid var(--color-disabled);border-radius:var(--radius-button);' +
           'background:var(--color-white);font-size:var(--font-size-body);font-weight:700;color:var(--color-text-secondary);cursor:pointer;}' +
         '.moa-preset-btn.on{border-color:var(--color-text-primary);background:var(--color-text-primary);color:var(--color-white);}' +
+        '.moa-input-label{font-size:var(--font-size-caption);color:var(--color-text-secondary);font-weight:600;padding:0 var(--space-5) 6px;}' +
         '.moa-input-row{display:flex;align-items:center;gap:8px;padding:0 var(--space-5) var(--space-2);}' +
         '.moa-amount-input{flex:1;height:48px;border:1.5px solid var(--color-disabled);border-radius:var(--radius-button);' +
           'padding:0 14px;font-size:18px;font-weight:800;text-align:right;-moz-appearance:textfield;}' +

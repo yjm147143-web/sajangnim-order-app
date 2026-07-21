@@ -121,6 +121,7 @@
   function getCustomerGuideSettings(storeId) {
     const store = findStore(storeId);
     return {
+      enabled: store.guideEnabled !== false,
       displayMode: store.guideDisplayMode || 'time',
       cookTimeBase: store.cookTimeBase != null ? store.cookTimeBase : 10,
       cookTimeMarginal: store.cookTimeMarginal != null ? store.cookTimeMarginal : 2,
@@ -133,6 +134,7 @@
 
   function updateCustomerGuideSettings(storeId, payload) {
     const store = findStore(storeId);
+    if (payload.enabled !== undefined) store.guideEnabled = payload.enabled;
     if (payload.displayMode !== undefined) store.guideDisplayMode = payload.displayMode;
     if (payload.cookTimeBase !== undefined) store.cookTimeBase = payload.cookTimeBase;
     if (payload.cookTimeMarginal !== undefined) store.cookTimeMarginal = payload.cookTimeMarginal;

@@ -1,5 +1,6 @@
 /*
- * 손님 안내 설정 화면 (구 '예상 대기시간 관리'를 전면 대체)
+ * 고객 대기 관리 화면 (구 '손님 안내 설정', 그 이전엔 '예상 대기시간 관리')
+ * - 기능 전체 사용 여부 토글 (OFF면 손님 화면에 대기 안내를 보여주지 않음)
  * - 표시 모드 선택: 예상 시간 / 대기 주문 수
  * - (예상 시간 모드) 기준 조리 시간 / 조리 인원 / 안전 여유 설정
  * - 손님 화면 미리보기 (실시간 갱신)
@@ -42,6 +43,11 @@
   function render() {
     return (
       '<style>' +
+        '.settings-list-item.no-toggle-click{cursor:default;flex-wrap:wrap;row-gap:8px;}' +
+        '.settings-list-item.no-toggle-click:active{background:transparent;}' +
+        '.settings-list-item .label-group{display:flex;flex-direction:column;gap:4px;flex:0 1 auto;min-width:0;}' +
+        '.settings-list-item .label-group .label{flex:none;}' +
+        '.settings-list-item .label-sub{font-size:var(--font-size-caption);color:var(--color-text-secondary);font-weight:500;}' +
         '.stepper-row{display:flex;align-items:center;justify-content:space-between;gap:12px;}' +
         '.stepper-btn{width:44px;height:44px;border-radius:12px;border:1.5px solid var(--color-disabled);background:var(--color-white);' +
           'font-size:22px;font-weight:700;color:var(--color-text-primary);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}' +
@@ -91,10 +97,23 @@
       '</style>' +
       '<div class="topbar">' +
         '<div class="topbar-side"><button type="button" class="icon-btn" id="cg-back-btn" aria-label="뒤로가기">←</button></div>' +
-        '<div class="topbar-title">손님 안내 설정</div>' +
+        '<div class="topbar-title">고객 대기 관리</div>' +
         '<div class="topbar-side"></div>' +
       '</div>' +
       '<div class="screen-scroll">' +
+
+        '<div class="settings-list-item no-toggle-click">' +
+          '<div class="icon">⏱️</div>' +
+          '<div class="label-group">' +
+            '<div class="label">고객 대기 관리 사용</div>' +
+            '<div class="label-sub" id="cg-enabled-sub">-</div>' +
+          '</div>' +
+          '<button type="button" class="toggle" id="cg-enabled-toggle"><span class="toggle-knob"></span></button>' +
+        '</div>' +
+
+        '<div class="divider-line"></div>' +
+
+        '<div id="cg-body-wrap">' +
 
         '<div class="section-title">손님에게 무엇을 보여줄까요?</div>' +
         '<div class="mode-select" id="mode-select">' +
@@ -196,6 +215,8 @@
           '</div>' +
         '</div>' +
 
+        '</div>' +
+
       '</div>' +
       '<div class="cta-fixed"><button type="button" class="btn btn-primary" id="cg-save-btn">저장</button></div>'
     );
@@ -208,6 +229,7 @@
     var settings = window.MockApi.getCustomerGuideSettings(storeId);
 
     var state = {
+      enabled: settings.enabled,
       displayMode: settings.displayMode,
       cookTimeBase: settings.cookTimeBase,
       cookTimeMarginal: settings.cookTimeMarginal,
@@ -221,6 +243,7 @@
     // 예상 시간/대기 주문 수 2개 탭 공통 "저장" 버튼을 눌러야 값이 실제로 저장된다 (그 전까지는 화면 내 미리보기만 갱신)
     function saveAll() {
       window.MockApi.updateCustomerGuideSettings(storeId, {
+        enabled: state.enabled,
         displayMode: state.displayMode,
         cookTimeBase: state.cookTimeBase,
         cookTimeMarginal: state.cookTimeMarginal,
@@ -230,6 +253,15 @@
         bufferMinutes: state.bufferMinutes,
       });
       window.UI.toast('저장했어요');
+    }
+
+    // ---------- 사용 여부 ----------
+    function renderEnabled() {
+      root.querySelector('#cg-enabled-toggle').classList.toggle('on', state.enabled);
+      root.querySelector('#cg-enabled-sub').textContent = state.enabled
+        ? '손님 화면에 대기 안내를 보여줘요'
+        : '손님 화면에 대기 안내를 보여주지 않아요';
+      root.querySelector('#cg-body-wrap').classList.toggle('cg-hidden', !state.enabled);
     }
 
     // ---------- 모드 ----------
@@ -296,6 +328,7 @@
     }
 
     function renderAll() {
+      renderEnabled();
       renderMode();
       renderCookFields();
       renderHelper();
@@ -306,6 +339,11 @@
     // ---------- 이벤트 바인딩 ----------
     root.querySelector('#cg-back-btn').addEventListener('click', function () {
       window.Router.back();
+    });
+
+    root.querySelector('#cg-enabled-toggle').addEventListener('click', function () {
+      state.enabled = !state.enabled;
+      renderEnabled();
     });
 
     root.querySelectorAll('#mode-select .mode-select-btn').forEach(function (btn) {
