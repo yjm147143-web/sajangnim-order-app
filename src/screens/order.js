@@ -168,8 +168,11 @@
     if (expanded) {
       html += '<div class="order-card-payment-row">결제수단 ' + esc(order.paymentMethod) + ' · ' + window.UI.formatMoney(order.amount) + '</div>';
       html += '<div class="order-card-detail">' + order.items.map(function (it) {
-        const optText = (it.optionNames && it.optionNames.length) ? ' <span class="opt">(' + it.optionNames.map(function (o) { return esc(o); }).join(', ') + ')</span>' : '';
-        return '<div class="order-card-menu-line"><span>' + esc(it.menuName) + optText + '</span><span>' + it.quantity + '개</span></div>';
+        const menuLine = '<div class="order-card-menu-line"><span>' + esc(it.menuName) + '</span><span>' + it.quantity + '개</span></div>';
+        const optLine = (it.optionNames && it.optionNames.length)
+          ? '<div class="order-card-option-line">ㄴ ' + it.optionNames.map(function (o) { return esc(o); }).join(', ') + '</div>'
+          : '';
+        return menuLine + optLine;
       }).join('') +
       (order.customerNote ? '<div class="order-card-note">💬 ' + esc(order.customerNote) + '</div>' : '') +
       '</div>';

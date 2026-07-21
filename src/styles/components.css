@@ -390,7 +390,7 @@ select.input-field { appearance: none; background-image: url("data:image/svg+xml
 .phone-warning-inline { font-size: 11px; font-weight: 600; color: var(--color-accent-red); margin-left: 4px; }
 .order-card-detail { border-top: 1px dashed var(--color-disabled); margin-top: var(--space-3); padding-top: var(--space-3); }
 .order-card-menu-line { display: flex; justify-content: space-between; font-size: var(--font-size-caption); margin-bottom: 4px; color: var(--color-text-primary); }
-.order-card-menu-line .opt { color: var(--color-text-secondary); }
+.order-card-option-line { font-size: var(--font-size-micro); color: var(--color-text-secondary); padding-left: 10px; margin: -2px 0 4px; }
 .order-card-note { margin-top: var(--space-2); padding: var(--space-2) var(--space-3); background: var(--color-accent-amber-bg); border-radius: var(--space-2); font-size: var(--font-size-caption); color: #a15c00; font-weight: 600; }
 .order-card-actions { display: flex; gap: var(--space-2); margin-top: var(--space-3); }
 .order-card-actions .btn { flex: 1; width: auto; }

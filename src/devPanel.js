@@ -11,23 +11,31 @@
  */
 (function () {
   var STYLE = '' +
-    '#dev-panel-host{align-self:flex-start;}' +
-    '.dp-panel{width:260px;background:#15152b;border:2px dashed #7c5cff;border-radius:16px;' +
-    'padding:16px;box-sizing:border-box;max-height:874px;overflow-y:auto;font-family:inherit;}' +
-    '.dp-title{font-size:13px;font-weight:800;color:#c9baff;letter-spacing:0.3px;margin-bottom:14px;}' +
-    '.dp-group{margin-bottom:12px;}' +
-    '.dp-group-label{display:block;font-size:11px;font-weight:700;color:#8b8bab;margin-bottom:6px;}' +
+    '#dev-panel-host{width:402px;max-width:100vw;}' +
+    '.dp-panel{width:402px;max-width:100vw;background:#15152b;border:2px dashed #7c5cff;border-radius:16px;' +
+    'padding:14px 16px;box-sizing:border-box;font-family:inherit;}' +
+    '.dp-panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}' +
+    '.dp-title{font-size:13px;font-weight:800;color:#c9baff;letter-spacing:0.3px;}' +
+    '.dp-collapse-btn{background:none;border:none;color:#8b8bab;font-size:18px;line-height:1;cursor:pointer;padding:2px 4px;}' +
+    '.dp-collapse-btn:active{color:#fff;}' +
+    '.dp-groups{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-bottom:12px;}' +
+    '.dp-group{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}' +
+    '.dp-group-label{font-size:11px;font-weight:700;color:#8b8bab;white-space:nowrap;}' +
     '.dp-pill-row{display:flex;gap:6px;flex-wrap:wrap;}' +
     '.dp-pill{background:#2a2a45;border:1px solid #45456b;color:#d8d8ea;font-size:12px;font-weight:700;' +
     'padding:6px 12px;border-radius:999px;cursor:pointer;}' +
     '.dp-pill.active{background:#7c5cff;border-color:#7c5cff;color:#fff;}' +
-    '.dp-add-btn{width:100%;background:#7c5cff;color:#fff;border:none;font-size:13px;font-weight:800;' +
-    'padding:12px 14px;border-radius:12px;cursor:pointer;margin-top:4px;}' +
+    '.dp-actions-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}' +
+    '.dp-add-btn{flex:1;min-width:160px;background:#7c5cff;color:#fff;border:none;font-size:13px;font-weight:800;' +
+    'padding:12px 14px;border-radius:12px;cursor:pointer;}' +
     '.dp-add-btn:active{opacity:0.85;}' +
     '.dp-add-btn:disabled{background:#3a3a52;color:#8b8bab;cursor:not-allowed;}' +
-    '.dp-offline-hint{font-size:11px;color:#ff9a9a;margin-top:6px;line-height:1.4;}' +
-    '.dp-divider{height:1px;background:#2f2f4d;margin:14px 0;}' +
-    '.dp-offline-btn{width:100%;justify-content:center;}';
+    '.dp-offline-btn{flex-shrink:0;}' +
+    '.dp-offline-hint{font-size:11px;color:#ff9a9a;margin-top:8px;line-height:1.4;}' +
+    '.dp-tab{width:402px;max-width:100vw;height:44px;border-radius:14px;background:#15152b;' +
+    'border:2px dashed #7c5cff;color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;' +
+    'justify-content:center;gap:8px;cursor:pointer;box-sizing:border-box;}' +
+    '.dp-tab:active{opacity:0.85;}';
 
   var devHasNote = false;
   var devIsReservation = false;
@@ -37,6 +45,7 @@
   var devHasOption = false;
   var devCount = 1;
   var devSimOffline = false;
+  var panelOpen = false;
   var lastVisible = null;
 
   function isOffline() { return devSimOffline; }
@@ -57,9 +66,17 @@
       '</div></div>';
   }
 
+  function tabHtml() {
+    return '<button type="button" class="dp-tab" data-action="dp-toggle-panel" aria-label="테스트 주문 만들기 열기">🛠️ 테스트 주문 만들기 열기</button>';
+  }
+
   function panelHtml() {
     return '<div class="dp-panel">' +
-      '<div class="dp-title">🛠️ 테스트 주문 만들기</div>' +
+      '<div class="dp-panel-header">' +
+      '<span class="dp-title">🛠️ 테스트 주문 만들기</span>' +
+      '<button type="button" class="dp-collapse-btn" data-action="dp-toggle-panel" aria-label="접기">✕</button>' +
+      '</div>' +
+      '<div class="dp-groups">' +
       pillGroupHtml('고객요청', [{ v: '0', label: '없음' }, { v: '1', label: '있음' }], devHasNote ? '1' : '0', 'dp-set-note') +
       pillGroupHtml('주문유형', [{ v: '0', label: '현장' }, { v: '1', label: '예약' }], devIsReservation ? '1' : '0', 'dp-set-reservation') +
       pillGroupHtml('주문채널', [{ v: 'QR', label: 'QR오더' }, { v: 'TABLET', label: '태블릿오더' }], devChannel, 'dp-set-channel') +
@@ -67,10 +84,12 @@
       pillGroupHtml('메뉴수', [{ v: '0', label: '1개' }, { v: '1', label: '여러개' }], devMultiMenu ? '1' : '0', 'dp-set-multimenu') +
       pillGroupHtml('옵션', [{ v: '0', label: '없음' }, { v: '1', label: '있음' }], devHasOption ? '1' : '0', 'dp-set-option') +
       pillGroupHtml('개수', [1, 3, 5, 10].map(function (n) { return { v: String(n), label: n + '개' }; }), String(devCount), 'dp-set-count') +
+      '</div>' +
+      '<div class="dp-actions-row">' +
       '<button type="button" class="dp-add-btn" data-action="dp-add-order"' + (devSimOffline ? ' disabled' : '') + '>+ 주문 ' + devCount + '건 추가</button>' +
-      (devSimOffline ? '<div class="dp-offline-hint">📶 오프라인 상태에서는 신규 주문이 들어올 수 없어요</div>' : '') +
-      '<div class="dp-divider"></div>' +
       '<button type="button" class="dp-pill dp-offline-btn' + (devSimOffline ? ' active' : '') + '" data-action="dp-toggle-offline">' + (devSimOffline ? '🟢 온라인으로 복귀' : '📶 오프라인 시뮬레이션') + '</button>' +
+      '</div>' +
+      (devSimOffline ? '<div class="dp-offline-hint">오프라인 상태에서는 신규 주문이 들어올 수 없어요</div>' : '') +
       '</div>';
   }
 
@@ -78,7 +97,8 @@
     var host = document.getElementById('dev-panel-host');
     if (!host) return;
     var user = currentOwnerContext();
-    host.innerHTML = user ? panelHtml() : '';
+    if (!user) { host.innerHTML = ''; return; }
+    host.innerHTML = panelOpen ? panelHtml() : tabHtml();
   }
 
   function addOrders() {
@@ -126,6 +146,7 @@
     else if (action === 'dp-set-count') devCount = Number(value);
     else if (action === 'dp-add-order') { addOrders(); return; }
     else if (action === 'dp-toggle-offline') { toggleOffline(); return; }
+    else if (action === 'dp-toggle-panel') { panelOpen = !panelOpen; render(); return; }
     else return;
     render();
   }
