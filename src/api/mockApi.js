@@ -235,6 +235,41 @@
   // ---------------- Orders ----------------
   function getOrder(id) { return DB.orders.find(function (o) { return o.id === id; }); }
 
+  // ---------------- 개발자 도구: 임의의 신규 주문 생성 (실시간 주문 유입 시뮬레이션) ----------------
+  function seedRandomOrders(storeId, count) {
+    const menuItems = DB.menuItems.filter(function (m) { return m.storeId === storeId && !m.soldOut; });
+    if (!menuItems.length) return [];
+    const existingNums = DB.orders
+      .filter(function (o) { return o.storeId === storeId; })
+      .map(function (o) { return parseInt(o.pickupNo, 10) || 0; });
+    let nextNo = (existingNums.length ? Math.max.apply(null, existingNums) : 1000) + 1;
+    const phones = ['01011112222', '01022223333', '01033334444', '01044445555', '01055556666', '01066667777', '01077778888'];
+    const payments = ['카드', '간편결제', '쿠폰'];
+    const created = [];
+    for (let i = 0; i < count; i++) {
+      const item = menuItems[Math.floor(Math.random() * menuItems.length)];
+      const qty = 1 + Math.floor(Math.random() * 2);
+      const order = {
+        id: uid('order'), storeId: storeId,
+        paymentOrderNo: 'PG-' + Math.floor(800000 + Math.random() * 99999),
+        pickupNo: String(nextNo + i),
+        channel: Math.random() < 0.5 ? 'QR' : 'TABLET',
+        paymentMethod: payments[Math.floor(Math.random() * payments.length)],
+        amount: item.price * qty,
+        items: [{ menuName: item.name, optionNames: [], quantity: qty }],
+        customerContact: phones[Math.floor(Math.random() * phones.length)],
+        orderedAt: new Date().toISOString(), acceptedAt: null, doneAt: null,
+        status: 'WAITING', called: false, calledCount: 0, completeCount: 0,
+        canceled: false, cancelReason: null, cancelType: null,
+        isReservation: false, reservationTime: null, customerNote: null,
+      };
+      DB.orders.unshift(order);
+      created.push(order);
+    }
+    persist();
+    return created;
+  }
+
   function getOrders(storeId, opts) {
     opts = opts || {};
     let list = DB.orders.filter(function (o) { return o.storeId === storeId; });
@@ -598,6 +633,7 @@
     addMenuItem: addMenuItem, updateMenuItem: updateMenuItem, toggleSoldOut: toggleSoldOut, moveMenuItem: moveMenuItem,
     getStaffAccounts: getStaffAccounts, createStaffAccount: createStaffAccount, toggleStaffActive: toggleStaffActive,
     getOrder: getOrder, getOrders: getOrders, acceptOrder: acceptOrder, cancelOrder: cancelOrder,
+    seedRandomOrders: seedRandomOrders,
     callCustomer: callCustomer, completeOrder: completeOrder, cancelPayment: cancelPayment,
     revertOrder: revertOrder, returnOrder: returnOrder, bulkAction: bulkAction,
     getSalesByChannel: getSalesByChannel, getSalesByPayment: getSalesByPayment, getSalesByHour: getSalesByHour,

@@ -431,6 +431,8 @@
 
   function onOffline() { isOnline = false; refreshOfflineBanner(); updateList(); }
   function onOnline() { isOnline = true; refreshOfflineBanner(); updateList(); }
+  // 개발자 도구에서 임의로 신규 주문을 추가했을 때 목록을 즉시 갱신한다.
+  function onMockDataChanged() { updateList(); }
 
   // ---------------- 이벤트 위임 ----------------
   function onRootClick(e) {
@@ -504,7 +506,7 @@
     selectedIds = new Set();
     expandedAll = true;
     bucketOverrides = {};
-    isOnline = navigator.onLine;
+    isOnline = navigator.onLine && !(window.DevTools && window.DevTools.isOffline());
 
     const disabled = !isOnline;
     const orders = fetchOrders();
@@ -547,11 +549,13 @@
     root.addEventListener('input', onRootInput);
     window.addEventListener('offline', onOffline);
     window.addEventListener('online', onOnline);
+    window.addEventListener('mock:orders-changed', onMockDataChanged);
   }
 
   function unmount() {
     window.removeEventListener('offline', onOffline);
     window.removeEventListener('online', onOnline);
+    window.removeEventListener('mock:orders-changed', onMockDataChanged);
     root = null;
   }
 
