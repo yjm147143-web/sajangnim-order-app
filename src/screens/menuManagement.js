@@ -400,10 +400,12 @@
                 (state.imageUrl ? '<img src="' + esc(state.imageUrl) + '" alt="" />' : '<span>📷</span>') +
               '</div>' +
               '<div class="menu-image-upload-actions">' +
-                '<label class="btn btn-outline btn-sm" for="f-image-file">사진 선택</label>' +
+                '<label class="btn btn-outline btn-sm" for="f-image-file-album">앨범에서 선택</label>' +
+                '<label class="btn btn-outline btn-sm" for="f-image-file-camera">직접 촬영</label>' +
                 (state.imageUrl ? '<button type="button" class="btn-text" id="remove-image-btn">이미지 삭제</button>' : '') +
               '</div>' +
-              '<input type="file" accept="image/*" id="f-image-file" style="display:none;" />' +
+              '<input type="file" accept="image/*" id="f-image-file-album" style="display:none;" />' +
+              '<input type="file" accept="image/*" capture="environment" id="f-image-file-camera" style="display:none;" />' +
             '</div>' +
             '<span class="menu-edit-subcaption">앨범에서 선택하거나 카메라로 바로 촬영할 수 있어요</span>' +
           '</div>' +
@@ -546,7 +548,7 @@
         removeBtn.remove();
       }
     }
-    root.querySelector('#f-image-file').addEventListener('change', function (e) {
+    function handleImageFile(e) {
       var file = e.target.files && e.target.files[0];
       if (!file) return;
       var reader = new FileReader();
@@ -556,7 +558,9 @@
         updatePreview();
       };
       reader.readAsDataURL(file);
-    });
+    }
+    root.querySelector('#f-image-file-album').addEventListener('change', handleImageFile);
+    root.querySelector('#f-image-file-camera').addEventListener('change', handleImageFile);
     var initialRemoveBtn = root.querySelector('#remove-image-btn');
     if (initialRemoveBtn) {
       initialRemoveBtn.addEventListener('click', function () { state.imageUrl = ''; updateImageUI(); updatePreview(); });
