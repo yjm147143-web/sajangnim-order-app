@@ -65,7 +65,7 @@
 
     const stores = [
       {
-        id: 'store-1', eventId: 'event-1', name: '브루웍스 성수점', operatingStatus: 'OPEN', autoAcceptOrders: false,
+        id: 'store-1', eventId: 'event-1', name: '브루웍스 성수점', operatingStatus: 'OPEN', autoAcceptOrders: true,
         guideDisplayMode: 'time', cookTimeBase: 10, cookTimeMarginal: 2, cookTimeBatch: 6,
         cookHasHelper: false, cookHelperCount: 1, cookBufferMinutes: 2,
         notificationEnabled: true, notificationVolume: 70,

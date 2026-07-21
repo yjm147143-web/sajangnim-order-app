@@ -171,6 +171,8 @@
         description: item.description || '',
         imageUrl: item.imageUrl || '',
         origin: item.origin || '',
+        nutritionInfo: item.nutritionInfo || '',
+        allergyInfo: item.allergyInfo || '',
         stockQuantity: item.stockQuantity != null ? item.stockQuantity : '',
         autoSoldoutEnabled: item.autoSoldoutEnabled !== false,
         exposed: item.exposed !== false,
@@ -190,6 +192,8 @@
       description: '',
       imageUrl: '',
       origin: '',
+      nutritionInfo: '',
+      allergyInfo: '',
       stockQuantity: '',
       autoSoldoutEnabled: true,
       exposed: true,
@@ -251,6 +255,8 @@
           (state.description ? '<div class="menu-preview-desc">' + esc(state.description) + '</div>' : '') +
           '<div class="menu-preview-price">' + money(priceNum) + '</div>' +
           (state.origin ? '<div class="menu-preview-origin">원산지 · ' + esc(state.origin) + '</div>' : '') +
+          (state.nutritionInfo ? '<div class="menu-preview-origin">영양정보 · ' + esc(state.nutritionInfo) + '</div>' : '') +
+          (state.allergyInfo ? '<div class="menu-preview-origin">알레르기 정보 · ' + esc(state.allergyInfo) + '</div>' : '') +
         '</div>' +
       '</div>' +
       (!state.exposed ? '<div class="section-caption" style="text-align:center;">고객 화면에 노출되지 않아요 (미노출 설정)</div>' : '')
@@ -307,6 +313,8 @@
       description: (state.description || '').trim(),
       imageUrl: (state.imageUrl || '').trim(),
       origin: (state.origin || '').trim(),
+      nutritionInfo: (state.nutritionInfo || '').trim(),
+      allergyInfo: (state.allergyInfo || '').trim(),
       stockQuantity: state.stockQuantity === '' ? 0 : Number(state.stockQuantity),
       autoSoldoutEnabled: !!state.autoSoldoutEnabled,
       exposed: !!state.exposed,
@@ -338,6 +346,12 @@
         '.menu-edit-subcaption{font-size:var(--font-size-micro);color:var(--color-text-secondary);font-weight:500;display:block;margin-top:2px;}' +
         '.menu-edit-preview-hidden{opacity:0.45;}' +
         '.menu-edit-form-pad{padding:20px;}' +
+        '.menu-image-upload-row{display:flex;align-items:center;gap:12px;}' +
+        '.menu-image-thumb{width:64px;height:64px;border-radius:12px;background:var(--color-divider);display:flex;' +
+          'align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;font-size:24px;}' +
+        '.menu-image-thumb img{width:100%;height:100%;object-fit:cover;}' +
+        '.menu-image-upload-actions{display:flex;flex-direction:column;align-items:flex-start;gap:4px;}' +
+        '.menu-image-upload-actions label.btn{cursor:pointer;}' +
       '</style>' +
       '<div class="topbar">' +
         '<div class="topbar-side"><button type="button" class="icon-btn" id="edit-back">←</button></div>' +
@@ -376,13 +390,32 @@
 
           '<div class="input-group">' +
             '<div class="input-label">메뉴 이미지</div>' +
-            '<input class="input-field" type="text" id="f-image" placeholder="이미지 URL을 입력해주세요 (선택)" value="' + esc(state.imageUrl) + '" />' +
-            '<span class="menu-edit-subcaption">실제 업로드 대신 이미지 URL을 입력하면 미리보기에 반영돼요</span>' +
+            '<div class="menu-image-upload-row">' +
+              '<div class="menu-image-thumb" id="menu-image-thumb">' +
+                (state.imageUrl ? '<img src="' + esc(state.imageUrl) + '" alt="" />' : '<span>📷</span>') +
+              '</div>' +
+              '<div class="menu-image-upload-actions">' +
+                '<label class="btn btn-outline btn-sm" for="f-image-file">사진 선택</label>' +
+                (state.imageUrl ? '<button type="button" class="btn-text" id="remove-image-btn">이미지 삭제</button>' : '') +
+              '</div>' +
+              '<input type="file" accept="image/*" id="f-image-file" style="display:none;" />' +
+            '</div>' +
+            '<span class="menu-edit-subcaption">앨범에서 선택하거나 카메라로 바로 촬영할 수 있어요</span>' +
           '</div>' +
 
           '<div class="input-group">' +
             '<div class="input-label">원산지 (선택)</div>' +
             '<input class="input-field" type="text" id="f-origin" placeholder="원산지를 입력해주세요" value="' + esc(state.origin) + '" />' +
+          '</div>' +
+
+          '<div class="input-group">' +
+            '<div class="input-label">영양 정보 (선택)</div>' +
+            '<textarea class="input-field" id="f-nutrition" placeholder="예: 열량 350kcal, 당류 20g">' + esc(state.nutritionInfo) + '</textarea>' +
+          '</div>' +
+
+          '<div class="input-group">' +
+            '<div class="input-label">알레르기 정보 (선택)</div>' +
+            '<textarea class="input-field" id="f-allergy" placeholder="예: 우유, 밀, 대두 함유">' + esc(state.allergyInfo) + '</textarea>' +
           '</div>' +
 
           '<div class="input-group">' +
@@ -461,9 +494,40 @@
     root.querySelector('#f-name').addEventListener('input', function (e) { state.name = e.target.value; updatePreview(); });
     root.querySelector('#f-price').addEventListener('input', function (e) { state.price = e.target.value; updatePreview(); });
     root.querySelector('#f-desc').addEventListener('input', function (e) { state.description = e.target.value; updatePreview(); });
-    root.querySelector('#f-image').addEventListener('input', function (e) { state.imageUrl = e.target.value; updatePreview(); });
     root.querySelector('#f-origin').addEventListener('input', function (e) { state.origin = e.target.value; updatePreview(); });
+    root.querySelector('#f-nutrition').addEventListener('input', function (e) { state.nutritionInfo = e.target.value; updatePreview(); });
+    root.querySelector('#f-allergy').addEventListener('input', function (e) { state.allergyInfo = e.target.value; updatePreview(); });
     root.querySelector('#f-stock').addEventListener('input', function (e) { state.stockQuantity = e.target.value; updatePreview(); });
+
+    function updateImageUI() {
+      root.querySelector('#menu-image-thumb').innerHTML = state.imageUrl
+        ? '<img src="' + esc(state.imageUrl) + '" alt="" />'
+        : '<span>📷</span>';
+      var removeBtn = root.querySelector('#remove-image-btn');
+      if (state.imageUrl && !removeBtn) {
+        var btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'btn-text'; btn.id = 'remove-image-btn'; btn.textContent = '이미지 삭제';
+        btn.addEventListener('click', function () { state.imageUrl = ''; updateImageUI(); updatePreview(); });
+        root.querySelector('.menu-image-upload-actions').appendChild(btn);
+      } else if (!state.imageUrl && removeBtn) {
+        removeBtn.remove();
+      }
+    }
+    root.querySelector('#f-image-file').addEventListener('change', function (e) {
+      var file = e.target.files && e.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function (ev) {
+        state.imageUrl = ev.target.result;
+        updateImageUI();
+        updatePreview();
+      };
+      reader.readAsDataURL(file);
+    });
+    var initialRemoveBtn = root.querySelector('#remove-image-btn');
+    if (initialRemoveBtn) {
+      initialRemoveBtn.addEventListener('click', function () { state.imageUrl = ''; updateImageUI(); updatePreview(); });
+    }
 
     var newCategoryInput = root.querySelector('#f-new-category');
     if (newCategoryInput) {

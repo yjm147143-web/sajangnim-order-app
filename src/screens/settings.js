@@ -170,12 +170,25 @@
         autoToggle.addEventListener('click', function () {
           var store = window.MockApi.getStore(storeId);
           var next = !store.autoAcceptOrders;
-          var result = window.MockApi.updateAutoAccept(storeId, next);
-          if (next && result.autoAcceptedCount > 0) {
-            window.UI.toast('자동 수락을 켰어요 · 대기 중이던 ' + result.autoAcceptedCount + '건을 자동 수락했어요');
-          } else {
-            window.UI.toast(next ? '자동 수락을 켰어요' : '자동 수락을 껐어요');
+
+          if (next) {
+            var waitingCount = window.MockApi.getOrders(storeId, { status: 'WAITING' }).length;
+            if (waitingCount > 0) {
+              window.UI.confirmModal(
+                '자동 수락으로 전환할까요?',
+                '전환하면 지금 대기 중인 주문 ' + waitingCount + '건이 모두 자동 수락(처리중)되고, 앞으로 대기 탭이 보이지 않아요.',
+                '전환하기',
+                function () {
+                  var result = window.MockApi.updateAutoAccept(storeId, true);
+                  window.UI.toast('자동 수락을 켰어요 · 대기 중이던 ' + result.autoAcceptedCount + '건을 자동 수락했어요');
+                  refresh();
+                }
+              );
+              return;
+            }
           }
+          window.MockApi.updateAutoAccept(storeId, next);
+          window.UI.toast(next ? '자동 수락을 켰어요' : '자동 수락을 껐어요');
           refresh();
         });
       }

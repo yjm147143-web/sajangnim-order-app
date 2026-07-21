@@ -66,6 +66,7 @@
     }).join('');
     return (
       summaryCardHtml('합계 매출', total) +
+      '<div class="section-caption">이 화면은 최근 1개월 데이터만 조회할 수 있어요 · 더 자세한 매출 데이터는 사장님 사이트에서 확인해주세요</div>' +
       '<div class="chart-card">' + window.UI.salesChartHtml('period', data) + '</div>' +
       '<div class="section-title">일자별 매출<span class="sales-legend-hint"> · <span class="sales-amount-max">최고</span> / <span class="sales-amount-min">최저</span></span></div>' +
       '<div class="sales-list">' + rows + '</div>'

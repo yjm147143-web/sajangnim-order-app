@@ -33,9 +33,12 @@
     '#bulk-bar-slot:empty { display: none; }';
 
   // ---------------- 탭 구성 ----------------
-  // 대기 탭은 자동수락 여부(ON/OFF)와 무관하게 항상 노출한다.
-  // 자동수락 ON이면 신규 주문이 처리중 탭으로 바로 인입, OFF면 대기 탭으로 인입되는 차이만 있다.
+  // 자동수락 ON이면 신규 주문이 대기 없이 바로 처리중으로 인입되므로 대기 탭 자체를 숨긴다.
+  // OFF면 대기 탭을 포함한 3개 탭을 모두 노출한다.
   function computeTabs() {
+    if (store.autoAcceptOrders) {
+      return [{ status: 'PROCESSING', label: '처리중' }, { status: 'DONE', label: '완료' }];
+    }
     return [{ status: 'WAITING', label: '대기' }, { status: 'PROCESSING', label: '처리중' }, { status: 'DONE', label: '완료' }];
   }
 
@@ -159,8 +162,11 @@
     }
     const contact = window.UI.formatContact(order.customerContact);
     const suspicious = window.UI.isPhoneSuspicious(order.customerContact);
-    html += '<div class="order-card-phone' + (suspicious ? ' suspicious' : '') + '">' + esc(contact) +
-      (suspicious ? ' <span class="phone-warning-inline">⚠️오입력</span>' : '') + '</div>';
+    const isEmailContact = (order.customerContact || '').indexOf('@') !== -1;
+    const contactInner = esc(contact) + (suspicious ? ' <span class="phone-warning-inline">⚠️오입력</span>' : '');
+    html += '<div class="order-card-phone' + (suspicious ? ' suspicious' : '') + '">' +
+      (isEmailContact ? contactInner : '<a href="tel:' + esc(order.customerContact) + '">' + contactInner + '</a>') +
+      '</div>';
     if (order.canceled) {
       const typeLabel = order.cancelType === 'RETURN' ? '반품' : (order.cancelType === 'PAYMENT_CANCEL' ? '결제취소' : '주문취소');
       html += '<div class="order-card-cancel-reason">[' + typeLabel + '] ' + esc(order.cancelReason || '') + '</div>';
@@ -222,10 +228,16 @@
       '</div>';
   }
 
+  // 모든 주문 컨트롤(수락/취소/호출/완료/되돌리기/반품 등)은 오프라인이거나
+  // 매장이 '개점' 상태가 아니면(일시중지/마감) 비활성화한다.
+  function controlsDisabled() {
+    return !isOnline || (store && store.operatingStatus !== 'OPEN');
+  }
+
   // ---------------- 리스트 갱신 (부분 렌더 — 검색창 포커스 유지) ----------------
   function updateList() {
     if (!root) return;
-    const disabled = !isOnline;
+    const disabled = controlsDisabled();
     const orders = fetchOrders();
     const groups = window.UI.groupByBucket(orders);
     const wrap = root.querySelector('#order-list-wrap');
@@ -360,9 +372,22 @@
   }
 
   function handleCallCustomer(id) {
-    const res = window.MockApi.callCustomer(id);
-    window.UI.toast('카카오 알림톡 발송: ' + res.notification);
-    updateList();
+    function proceed() {
+      const res = window.MockApi.callCustomer(id);
+      window.UI.toast('카카오 알림톡 발송: ' + res.notification);
+      updateList();
+    }
+    const order = window.MockApi.getOrder(id);
+    if (order && order.calledCount > 0) {
+      window.UI.confirmModal(
+        '다시 호출할까요?',
+        '이미 호출한 주문건입니다. 다시 알림을 보낼까요?',
+        '다시 호출',
+        proceed
+      );
+      return;
+    }
+    proceed();
   }
 
   function handleComplete(id) {
@@ -511,7 +536,7 @@
     bucketOverrides = {};
     isOnline = navigator.onLine && !(window.DevTools && window.DevTools.isOffline());
 
-    const disabled = !isOnline;
+    const disabled = controlsDisabled();
     const orders = fetchOrders();
     const groups = window.UI.groupByBucket(orders);
 

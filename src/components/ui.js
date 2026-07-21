@@ -245,11 +245,26 @@
     const max = Math.max(1, ...data.map(function (d) { return d.amount; }));
     return '<div class="bar-chart-row">' + data.map(function (d) {
       const h = Math.round((d.amount / max) * 100);
-      return '<div class="bar-chart-col">' +
+      return '<div class="bar-chart-col" data-chart-amount="' + d.amount + '" data-chart-label="' + escapeHtml(d.name) + '">' +
         '<div class="bar-chart-bar' + (d.amount === max ? ' max' : '') + '" style="height:' + Math.max(h, 3) + '%"></div>' +
         '<div class="bar-chart-label">' + escapeHtml(d.name) + '</div>' +
         '</div>';
     }).join('') + '</div>';
+  }
+
+  // 막대 탭 시 해당 시점 금액을 말풍선으로 바로 보여준다(전역 위임 클릭).
+  function bindBarChartTooltip() {
+    document.addEventListener('click', function (e) {
+      const col = e.target.closest('.bar-chart-col');
+      const existing = document.querySelectorAll('.bar-chart-tooltip');
+      const alreadyOpenOnThis = col && col.querySelector('.bar-chart-tooltip');
+      existing.forEach(function (t) { t.remove(); });
+      if (!col || alreadyOpenOnThis) return;
+      const tip = document.createElement('div');
+      tip.className = 'bar-chart-tooltip';
+      tip.textContent = col.getAttribute('data-chart-label') + ' · ' + formatMoney(Number(col.getAttribute('data-chart-amount')));
+      col.appendChild(tip);
+    });
   }
 
   // ---------------- Chart: Donut (SVG) ----------------
@@ -310,4 +325,6 @@
     barChartHtml: barChartHtml, donutChartHtml: donutChartHtml, rankListHtml: rankListHtml, salesChartHtml: salesChartHtml,
     playNotificationPreview: playNotificationPreview,
   };
+
+  bindBarChartTooltip();
 })();
