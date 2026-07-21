@@ -50,11 +50,11 @@
         '<div class="menu-row-body">' +
           '<div class="menu-row-name">' + esc(item.name) +
             (item.soldOut ? ' <span class="badge badge-danger-soft">품절</span>' : '') +
-            (item.exposed === false ? ' <span class="badge badge-neutral">미노출</span>' : '') +
+            (item.exposed === false ? ' <span class="badge badge-neutral">숨김</span>' : '') +
             (item.promoType ? ' ' + window.UI.promoBadgeHtml(item.promoType) : '') +
           '</div>' +
           '<div class="menu-row-sub">' + esc(catName) + (item.description ? ' · ' + esc(item.description) : '') + '</div>' +
-          '<div class="menu-row-price">' + money(item.price) + ' · 재고 ' + (item.stockQuantity != null ? item.stockQuantity + '개' : '-') + '</div>' +
+          '<div class="menu-row-price">' + money(item.price) + ' · 준비량 ' + (item.stockQuantity != null ? item.stockQuantity + '개' : '-') + '</div>' +
         '</div>' +
         '<div class="menu-row-side">' +
           (isSpecific ?
@@ -262,7 +262,7 @@
           (state.allergyInfo ? '<div class="menu-preview-origin">알레르기 정보 · ' + esc(state.allergyInfo) + '</div>' : '') +
         '</div>' +
       '</div>' +
-      (!state.exposed ? '<div class="section-caption" style="text-align:center;">고객 화면에 노출되지 않아요 (미노출 설정)</div>' : '')
+      (!state.exposed ? '<div class="section-caption" style="text-align:center;">고객 화면에 보이지 않아요 (숨김 설정)</div>' : '')
     );
   }
 
@@ -277,7 +277,7 @@
     }
     if (state.autoSoldoutEnabled) {
       if (state.stockQuantity === '' || state.stockQuantity === null || isNaN(Number(state.stockQuantity))) {
-        return { field: 'stock', message: '재고 수량 미입력' };
+        return { field: 'stock', message: '준비량 미입력' };
       }
     }
     return null;
@@ -333,7 +333,7 @@
     if (result.autoSoldoutTriggered && result.autoSoldoutTriggered.length) {
       window.UI.showModal({
         title: '자동 품절 처리',
-        message: '재고가 모두 소진되어 자동으로 품절 처리되었어요',
+        message: '준비량이 모두 소진되어 자동으로 품절 처리되었어요',
         buttons: [{ label: '확인', variant: 'btn-primary', onClick: function () { window.Router.back(); } }],
       });
     } else {
@@ -443,22 +443,25 @@
             '<div class="toggle-row">' +
               '<div class="label-group" style="display:flex;flex-direction:column;">' +
                 '<span class="input-label" style="margin:0;">자동 품절</span>' +
-                '<span class="menu-edit-subcaption">재고가 0이 되면 자동으로 품절 처리해요</span>' +
+                '<span class="menu-edit-subcaption">준비량이 0이 되면 자동으로 품절 처리해요</span>' +
               '</div>' +
               '<button type="button" class="toggle' + (state.autoSoldoutEnabled ? ' on' : '') + '" id="toggle-auto-soldout"><span class="toggle-knob"></span></button>' +
             '</div>' +
           '</div>' +
 
           '<div class="input-group">' +
-            '<div class="input-label">재고 수량<span id="stock-required-hint" style="color:var(--color-accent-red);' + (state.autoSoldoutEnabled ? '' : 'display:none;') + '"> · 자동품절 ON 시 필수</span></div>' +
-            '<input class="input-field" type="number" id="f-stock" placeholder="재고 수량을 입력해주세요" value="' + (state.stockQuantity === '' ? '' : state.stockQuantity) + '" />' +
+            '<div class="input-label">준비량<span id="stock-required-hint" style="color:var(--color-accent-red);' + (state.autoSoldoutEnabled ? '' : 'display:none;') + '"> · 자동품절 ON 시 필수</span></div>' +
+            '<input class="input-field" type="number" id="f-stock" placeholder="준비량을 입력해주세요" value="' + (state.stockQuantity === '' ? '' : state.stockQuantity) + '" />' +
             '<div class="input-error" id="err-stock" style="display:none;"></div>' +
           '</div>' +
 
           '<div class="input-group">' +
             '<div class="toggle-row">' +
-              '<span class="input-label" style="margin:0;">메뉴 노출</span>' +
-              '<button type="button" class="toggle' + (state.exposed ? ' on' : '') + '" id="toggle-exposed"><span class="toggle-knob"></span></button>' +
+              '<div class="label-group" style="display:flex;flex-direction:column;">' +
+                '<span class="input-label" style="margin:0;">메뉴 숨기기</span>' +
+                '<span class="menu-edit-subcaption">켜면 손님 화면에서 이 메뉴가 보이지 않아요</span>' +
+              '</div>' +
+              '<button type="button" class="toggle' + (!state.exposed ? ' on' : '') + '" id="toggle-exposed"><span class="toggle-knob"></span></button>' +
             '</div>' +
           '</div>' +
 
@@ -581,7 +584,7 @@
     var exposedToggle = root.querySelector('#toggle-exposed');
     exposedToggle.addEventListener('click', function () {
       state.exposed = !state.exposed;
-      exposedToggle.classList.toggle('on', state.exposed);
+      exposedToggle.classList.toggle('on', !state.exposed);
       updatePreview();
     });
 

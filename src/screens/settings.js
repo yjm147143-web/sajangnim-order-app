@@ -46,7 +46,7 @@
         '<div class="icon">⚡</div>' +
         '<div class="label-group">' +
           '<div class="label">자동 수락</div>' +
-          '<div class="label-sub">' + (autoAcceptOn ? '신규 주문이 대기 없이 바로 접수돼요' : '신규 주문은 대기 목록에서 확인 후 접수해요') + '</div>' +
+          '<div class="label-sub">' + (autoAcceptOn ? '신규 주문이 대기 없이 바로 접수돼요' : '신규 주문은 미수락 목록에서 확인 후 접수해요') + '</div>' +
         '</div>' +
         '<button type="button" class="toggle' + (autoAcceptOn ? ' on' : '') + '" id="auto-accept-toggle"><span class="toggle-knob"></span></button>' +
       '</div>' +
@@ -179,11 +179,11 @@
             if (waitingCount > 0) {
               window.UI.confirmModal(
                 '자동 수락으로 전환할까요?',
-                '전환하면 지금 대기 중인 주문 ' + waitingCount + '건이 모두 자동 수락(처리중)되고, 앞으로 대기 탭이 보이지 않아요.',
+                '전환하면 지금 미수락 상태인 주문 ' + waitingCount + '건이 모두 자동 수락(처리중)되고, 앞으로 미수락 탭이 보이지 않아요.',
                 '전환하기',
                 function () {
                   var result = window.MockApi.updateAutoAccept(storeId, true);
-                  window.UI.toast('자동 수락을 켰어요 · 대기 중이던 ' + result.autoAcceptedCount + '건을 자동 수락했어요');
+                  window.UI.toast('자동 수락을 켰어요 · 미수락 상태였던 ' + result.autoAcceptedCount + '건을 자동 수락했어요');
                   refresh();
                 }
               );

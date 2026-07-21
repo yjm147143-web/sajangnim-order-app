@@ -66,7 +66,7 @@
     }).join('');
     return (
       summaryCardHtml('합계 매출', total) +
-      '<div class="section-caption">이 화면은 최근 1개월 데이터만 조회할 수 있어요 · 더 자세한 매출 데이터는 사장님 사이트에서 확인해주세요</div>' +
+      '<div class="section-caption">이 화면은 최근 한 달 데이터만 조회할 수 있어요 · 더 자세한 매출 데이터는 사장님 사이트에서 확인해주세요</div>' +
       '<div class="chart-card">' + window.UI.salesChartHtml('period', data) + '</div>' +
       '<div class="section-title">일자별 매출<span class="sales-legend-hint"> · <span class="sales-amount-max">최고</span> / <span class="sales-amount-min">최저</span></span></div>' +
       '<div class="sales-list">' + rows + '</div>'
@@ -113,7 +113,7 @@
   }
 
   function rangeFilterHtml(range) {
-    const presets = [{ key: 'today', label: '당일' }, { key: 'yesterday', label: '전일' }, { key: 'last30', label: '최근 1달' }];
+    const presets = [{ key: 'today', label: '당일' }, { key: 'yesterday', label: '전일' }, { key: 'last30', label: '최근 한 달' }];
     return '<div class="date-range-bar" id="sales-range-filter">' +
       presets.map(function (p) {
         return '<button type="button" class="pill-btn' + (range.preset === p.key ? ' active' : '') + '" data-range-preset="' + p.key + '">' + p.label + '</button>';
@@ -175,7 +175,7 @@
     const bounds = window.MockApi.getSalesDateBounds();
     const bodyHtml =
       '<div class="sheet-title">기간 설정</div>' +
-      '<div class="section-caption" style="padding:0 0 12px;">최근 1달 이내에서만 선택할 수 있어요</div>' +
+      '<div class="section-caption" style="padding:0 0 12px;">최근 한 달 이내에서만 선택할 수 있어요</div>' +
       '<div class="input-group"><div class="input-label">시작일</div><input class="input-field" type="date" id="range-start-input" min="' + bounds.min + '" max="' + bounds.max + '" value="' + bounds.min + '" /></div>' +
       '<div class="input-group"><div class="input-label">종료일</div><input class="input-field" type="date" id="range-end-input" min="' + bounds.min + '" max="' + bounds.max + '" value="' + bounds.max + '" /></div>' +
       '<div class="input-error" id="range-error-text" style="display:none;"></div>' +

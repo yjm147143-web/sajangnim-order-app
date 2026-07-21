@@ -39,7 +39,7 @@
     if (store.autoAcceptOrders) {
       return [{ status: 'PROCESSING', label: '처리중' }, { status: 'DONE', label: '완료' }];
     }
-    return [{ status: 'WAITING', label: '대기' }, { status: 'PROCESSING', label: '처리중' }, { status: 'DONE', label: '완료' }];
+    return [{ status: 'WAITING', label: '미수락' }, { status: 'PROCESSING', label: '처리중' }, { status: 'DONE', label: '완료' }];
   }
 
   function indexOfStatus(status) {
@@ -125,13 +125,13 @@
     if (tabStatus === 'PROCESSING') {
       return '<div class="order-card-actions three">' +
         '<button type="button" class="btn btn-outline" data-action="call-customer" data-id="' + order.id + '"' + dAttr + '>고객 호출 (' + (order.calledCount || 0) + '회)</button>' +
-        '<button type="button" class="btn btn-outline" data-action="cancel-payment" data-id="' + order.id + '"' + dAttr + '>결제 취소</button>' +
-        '<button type="button" class="btn btn-primary" data-action="complete-order" data-id="' + order.id + '"' + dAttr + '>완료 처리 (' + (order.completeCount || 0) + '회)</button>' +
+        '<button type="button" class="btn btn-danger-solid" data-action="cancel-payment" data-id="' + order.id + '"' + dAttr + '>결제 취소</button>' +
+        '<button type="button" class="btn btn-primary" data-action="complete-order" data-id="' + order.id + '"' + dAttr + '>완료 (' + (order.completeCount || 0) + '회)</button>' +
         '</div>';
     }
     return '<div class="order-card-actions">' +
       '<button type="button" class="btn btn-outline" data-action="revert-order" data-id="' + order.id + '"' + dAttr + '>되돌리기</button>' +
-      '<button type="button" class="btn btn-secondary" data-action="return-order" data-id="' + order.id + '"' + dAttr + '>반품</button>' +
+      '<button type="button" class="btn btn-danger-solid" data-action="return-order" data-id="' + order.id + '"' + dAttr + '>결제 취소</button>' +
       '</div>';
   }
 
@@ -153,7 +153,7 @@
     }
     html += '<div class="order-card-content-row">' +
       '<div class="order-card-menu-main">' + esc(mainMenuLabel(order)) + '</div>' +
-      '<div class="order-card-pickup-block"><div class="pickup-label">' + (order.identifierType === 'SEAT' ? '좌석번호' : '픽업번호') + '</div><div class="pickup-value">' + esc(order.pickupNo) + '</div></div>' +
+      '<div class="order-card-pickup-block"><div class="pickup-label">' + (order.identifierType === 'SEAT' ? '좌석번호' : '호출번호') + '</div><div class="pickup-value">' + esc(order.pickupNo) + '</div></div>' +
       '</div>';
     // 전체 펼쳐보기/접기: 접었을 때도 대표주문메뉴·고객연락처·픽업번호·액션버튼·주문시간/경과시간은 노출한다
     // 예약 주문은 접수시간/경과시간 대신 예약 시각만 볼드로 노출한다
@@ -170,7 +170,7 @@
       (isEmailContact ? contactInner : '<a href="tel:' + esc(order.customerContact) + '">' + contactInner + '</a>') +
       '</div>';
     if (order.canceled) {
-      const typeLabel = order.cancelType === 'RETURN' ? '반품' : (order.cancelType === 'PAYMENT_CANCEL' ? '결제취소' : '주문취소');
+      const typeLabel = order.cancelType === 'RETURN' ? '결제 취소' : (order.cancelType === 'PAYMENT_CANCEL' ? '결제취소' : '주문취소');
       html += '<div class="order-card-cancel-reason">[' + typeLabel + '] ' + esc(order.cancelReason || '') + '</div>';
     }
     if (expanded) {
@@ -209,7 +209,7 @@
     const tabStatus = currentStatus();
     if (!allOrders.length) {
       if (searchQuery) return '<div class="empty-state"><div class="empty-state-emoji">🔎</div><div>검색 결과가 없어요</div></div>';
-      return '<div class="empty-state"><div class="empty-state-emoji">📭</div><div>주문이 없어요</div></div>';
+      return '<div class="empty-state"><div class="empty-state-emoji">📭</div><div>주문 내역이 없어요</div></div>';
     }
     return groups.map(function (g) {
       return renderBucketHeader(g, tabStatus, disabled) + g.orders.map(function (o) { return renderOrderCard(o, tabStatus, disabled); }).join('');
@@ -226,7 +226,7 @@
     }
     return '<div class="bulk-action-bar">' +
       '<button type="button" class="btn btn-outline" data-action="bulk-call"' + dAttr + '>선택 ' + n + '건 고객 호출</button>' +
-      '<button type="button" class="btn btn-primary" data-action="bulk-complete"' + dAttr + '>선택 ' + n + '건 완료 처리</button>' +
+      '<button type="button" class="btn btn-primary" data-action="bulk-complete"' + dAttr + '>선택 ' + n + '건 완료</button>' +
       '</div>';
   }
 
@@ -419,7 +419,7 @@
       });
     }
     if (user.role === 'STAFF') {
-      window.UI.requirePasswordGate(storeId, '반품 처리', proceed);
+      window.UI.requirePasswordGate(storeId, '결제 취소', proceed);
     } else {
       proceed();
     }
@@ -556,7 +556,7 @@
       '<div class="toolbar">' +
       '<div class="search-box">' +
       '<span>🔍</span>' +
-      '<input type="text" inputmode="numeric" id="search-input" placeholder="픽업번호로 검색" value="' + esc(searchQuery) + '" />' +
+      '<input type="text" inputmode="numeric" id="search-input" placeholder="호출번호로 검색" value="' + esc(searchQuery) + '" />' +
       '</div>' +
       '<div class="toolbar-row">' +
       '<div style="display:flex; gap:8px;">' +

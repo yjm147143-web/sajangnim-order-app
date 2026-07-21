@@ -1,6 +1,6 @@
 /*
  * 직원 계정 관리 화면
- * - 권한 잠금 설정 (사장님 전용, 계정 목록 위): 비밀번호 설정 시 직원 계정으로 매출조회·영업상태변경·반품처리·
+ * - 권한 잠금 설정 (사장님 전용, 계정 목록 위): 비밀번호 설정 시 직원 계정으로 매출조회·영업상태변경·결제취소·
  *   직원계정관리 진입 시 비밀번호 확인이 필요해진다. (실제 확인 로직은 UI.requirePasswordGate / settings.js / order.js에 있음)
  * - 계정 목록 (사용 여부 토글 포함)
  * - 직원 계정 생성 (바텀시트)
@@ -40,7 +40,7 @@
         '<div class="label-group">' +
           '<div class="label-title">권한 잠금 설정</div>' +
           '<div class="label-sub" id="lock-entry-sub">' + (locked
-            ? '비밀번호가 설정되어 있어요 · 직원은 매출 조회 · 영업상태 변경 · 반품 처리 · 직원 계정 관리 진입 시 비밀번호를 입력해야 해요'
+            ? '비밀번호가 설정되어 있어요 · 직원은 매출 조회 · 영업상태 변경 · 결제 취소 · 직원 계정 관리 진입 시 비밀번호를 입력해야 해요'
             : '비밀번호가 설정되지 않았어요 · 직원이 자유롭게 접근할 수 있어요') + '</div>' +
         '</div>' +
         '<span class="badge ' + (locked ? 'badge-danger-soft' : 'badge-neutral') + '" id="lock-entry-badge">' + (locked ? '설정됨' : '미설정') + '</span>' +
@@ -263,7 +263,7 @@
             '<div class="modal-title">권한 잠금 설정</div>' +
             '<div class="modal-message">' + (isSet
               ? '새 비밀번호를 입력하고 저장하면 기존 비밀번호가 바뀌어요.'
-              : '비밀번호를 설정하면, 직원 계정으로 매출 조회 · 영업상태 변경 · 반품 처리 · 직원 계정 관리에 들어갈 때마다 이 비밀번호를 입력해야 해요.') + '</div>' +
+              : '비밀번호를 설정하면, 직원 계정으로 매출 조회 · 영업상태 변경 · 결제 취소 · 직원 계정 관리에 들어갈 때마다 이 비밀번호를 입력해야 해요.') + '</div>' +
             '<input type="password" class="input-field" id="lock-setup-input" maxlength="12" placeholder="새 비밀번호" style="text-align:center;letter-spacing:4px;margin-bottom:6px;" />' +
             '<div class="input-error" id="lock-setup-error" style="min-height:16px;margin-bottom:10px;"></div>' +
             '<div class="btn-row" style="flex-direction:column;gap:8px;">' +
@@ -299,7 +299,7 @@
         unlockBtn.addEventListener('click', function () {
           window.UI.confirmModal(
             '잠금을 해제할까요?',
-            '해제하면 직원 계정으로 매출 조회 · 영업상태 변경 · 반품 처리 · 직원 계정 관리에 비밀번호 없이 바로 들어갈 수 있어요.',
+            '해제하면 직원 계정으로 매출 조회 · 영업상태 변경 · 결제 취소 · 직원 계정 관리에 비밀번호 없이 바로 들어갈 수 있어요.',
             '해제하기',
             function () {
               window.MockApi.clearPermissionLockPassword(storeId);

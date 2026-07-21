@@ -412,7 +412,7 @@
     o.cancelReason = reason;
     o.cancelType = 'RETURN';
     persist();
-    return { order: o, notification: '반품' };
+    return { order: o, notification: '결제 취소' };
   }
 
   function bulkAction(ids, action, extra) {
@@ -534,7 +534,7 @@
     stores.forEach(function (store) {
       const waitingOrders = DB.orders.filter(function (o) { return o.storeId === store.id && o.status === 'WAITING' && !o.canceled; });
       const delayed = waitingOrders.find(function (o) { return (Date.now() - new Date(o.orderedAt).getTime()) / 60000 >= 15; });
-      if (delayed) attention.push({ storeId: store.id, storeName: store.name, reason: '대기 주문이 15분 이상 지연되고 있어요' });
+      if (delayed) attention.push({ storeId: store.id, storeName: store.name, reason: '미수락 주문이 15분 이상 지연되고 있어요' });
       if (store.operatingStatus === 'OPEN' && store.lastOrderAt && (Date.now() - new Date(store.lastOrderAt).getTime()) / 60000 >= 60) {
         attention.push({ storeId: store.id, storeName: store.name, reason: '1시간 이상 신규 주문이 없어요' });
       }

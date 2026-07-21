@@ -82,7 +82,7 @@
       pillGroupHtml('고객요청', [{ v: '0', label: '없음' }, { v: '1', label: '있음' }], devHasNote ? '1' : '0', 'dp-set-note') +
       pillGroupHtml('주문유형', [{ v: '0', label: '현장' }, { v: '1', label: '예약' }], devIsReservation ? '1' : '0', 'dp-set-reservation') +
       pillGroupHtml('주문채널', [{ v: 'QR', label: 'QR오더' }, { v: 'TABLET', label: '태블릿오더' }], devChannel, 'dp-set-channel') +
-      pillGroupHtml('주문번호', [{ v: 'PICKUP', label: '픽업번호' }, { v: 'SEAT', label: '좌석번호' }], devIdentifierType, 'dp-set-identifier') +
+      pillGroupHtml('주문번호', [{ v: 'PICKUP', label: '호출번호' }, { v: 'SEAT', label: '좌석번호' }], devIdentifierType, 'dp-set-identifier') +
       pillGroupHtml('메뉴수', [{ v: '0', label: '1개' }, { v: '1', label: '여러개' }], devMultiMenu ? '1' : '0', 'dp-set-multimenu') +
       pillGroupHtml('옵션', [{ v: '0', label: '없음' }, { v: '1', label: '있음' }], devHasOption ? '1' : '0', 'dp-set-option') +
       pillGroupHtml('다회용기', [{ v: '0', label: '없음' }, { v: '1', label: '제공' }], devReusable ? '1' : '0', 'dp-set-reusable') +
