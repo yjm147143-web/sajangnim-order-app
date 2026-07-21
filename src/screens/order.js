@@ -28,6 +28,8 @@
   let devIsReservation = false;
   let devChannel = 'QR';
   let devIdentifierType = 'PICKUP';
+  let devMultiMenu = false;
+  let devHasOption = false;
   let devSimOffline = false;
 
   const SCOPED_STYLE = '' +
@@ -141,6 +143,8 @@
       devPillGroupHtml('주문유형', [{ v: '0', label: '현장' }, { v: '1', label: '예약' }], devIsReservation ? '1' : '0', 'dev-set-reservation') +
       devPillGroupHtml('주문채널', [{ v: 'QR', label: 'QR오더' }, { v: 'TABLET', label: '태블릿오더' }], devChannel, 'dev-set-channel') +
       devPillGroupHtml('주문번호', [{ v: 'PICKUP', label: '픽업번호' }, { v: 'SEAT', label: '좌석번호' }], devIdentifierType, 'dev-set-identifier') +
+      devPillGroupHtml('메뉴수', [{ v: '0', label: '1개' }, { v: '1', label: '여러개' }], devMultiMenu ? '1' : '0', 'dev-set-multimenu') +
+      devPillGroupHtml('옵션', [{ v: '0', label: '없음' }, { v: '1', label: '있음' }], devHasOption ? '1' : '0', 'dev-set-option') +
       '<div class="dev-bar-actions">' +
       '<button type="button" class="dev-bar-add-btn" data-action="dev-add-order">+ 이 조건으로 주문 추가</button>' +
       '<button type="button" class="dev-bar-pill' + (devSimOffline ? ' active' : '') + '" data-action="dev-toggle-offline">' + (devSimOffline ? '🟢 온라인으로 복귀' : '📶 오프라인 시뮬레이션') + '</button>' +
@@ -168,6 +172,8 @@
     else if (action === 'dev-set-reservation') devIsReservation = value === '1';
     else if (action === 'dev-set-channel') devChannel = value;
     else if (action === 'dev-set-identifier') devIdentifierType = value;
+    else if (action === 'dev-set-multimenu') devMultiMenu = value === '1';
+    else if (action === 'dev-set-option') devHasOption = value === '1';
     refreshDevBar();
   }
 
@@ -177,6 +183,8 @@
       isReservation: devIsReservation,
       channel: devChannel,
       identifierType: devIdentifierType,
+      multiMenu: devMultiMenu,
+      hasOption: devHasOption,
     });
     if (!order) { window.UI.toast('추가할 메뉴가 없어요'); return; }
     window.UI.toast('테스트 주문을 추가했어요');
@@ -541,7 +549,7 @@
     else if (action === 'bulk-accept') doBulkAccept();
     else if (action === 'bulk-complete') doBulkComplete();
     else if (action === 'dev-toggle-bar') toggleDevBar();
-    else if (action === 'dev-set-note' || action === 'dev-set-reservation' || action === 'dev-set-channel' || action === 'dev-set-identifier') setDevOption(action, target.getAttribute('data-value'));
+    else if (action === 'dev-set-note' || action === 'dev-set-reservation' || action === 'dev-set-channel' || action === 'dev-set-identifier' || action === 'dev-set-multimenu' || action === 'dev-set-option') setDevOption(action, target.getAttribute('data-value'));
     else if (action === 'dev-add-order') addDevOrder();
     else if (action === 'dev-toggle-offline') toggleDevOffline();
     else if (action === 'bulk-call') doBulkCall();

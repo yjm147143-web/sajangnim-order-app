@@ -236,7 +236,7 @@
   function getOrder(id) { return DB.orders.find(function (o) { return o.id === id; }); }
 
   // ---------------- 개발자 도구: 선택한 조건에 맞는 신규 주문 1건 생성 (실시간 주문 유입 시뮬레이션) ----------------
-  // opts: { hasNote, isReservation, channel: 'QR'|'TABLET', identifierType: 'PICKUP'|'SEAT' }
+  // opts: { hasNote, isReservation, channel: 'QR'|'TABLET', identifierType: 'PICKUP'|'SEAT', multiMenu, hasOption }
   function createCustomOrder(storeId, opts) {
     opts = opts || {};
     const menuItems = DB.menuItems.filter(function (m) { return m.storeId === storeId && !m.soldOut; });
@@ -246,9 +246,36 @@
     const payments = ['카드', '간편결제', '쿠폰'];
     const sampleNotes = ['빨대는 안 주셔도 돼요', '얼음 적게 넣어주세요', '많이 매워도 괜찮아요', '포장해주세요'];
     const seatCodes = ['A-3', 'A-12', 'B-2', 'B-7', 'C-1', 'D-5'];
-    const item = menuItems[Math.floor(Math.random() * menuItems.length)];
-    const qty = 1 + Math.floor(Math.random() * 2);
     const isReservation = !!opts.isReservation;
+
+    // 옵션 있음: 옵션 그룹(+ 옵션값)이 실제로 등록된 메뉴만 후보로 삼는다.
+    const itemsWithOption = menuItems.filter(function (m) {
+      return (m.optionGroups || []).some(function (g) { return (g.options || []).length; });
+    });
+    function pickMenu(preferOption) {
+      const pool = (preferOption && itemsWithOption.length) ? itemsWithOption : menuItems;
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
+    function buildLine(preferOption) {
+      const menu = pickMenu(preferOption);
+      const qty = 1 + Math.floor(Math.random() * 2);
+      let optionNames = [];
+      if (preferOption) {
+        const group = (menu.optionGroups || []).find(function (g) { return (g.options || []).length; });
+        if (group) optionNames = [group.options[Math.floor(Math.random() * group.options.length)].name];
+      }
+      return { menuName: menu.name, optionNames: optionNames, quantity: qty, price: menu.price };
+    }
+
+    const lineCount = opts.multiMenu ? (2 + Math.floor(Math.random() * 2)) : 1;
+    const lines = [];
+    let amount = 0;
+    for (let i = 0; i < lineCount; i++) {
+      // 옵션 있음을 선택했을 땐 최소 1개 메뉴엔 옵션이 붙도록 첫 줄에서 우선 배정한다.
+      const line = buildLine(!!opts.hasOption && i === 0);
+      lines.push({ menuName: line.menuName, optionNames: line.optionNames, quantity: line.quantity });
+      amount += line.price * line.quantity;
+    }
 
     let identifierValue;
     if (identifierType === 'SEAT') {
@@ -267,8 +294,8 @@
       identifierType: identifierType,
       channel: opts.channel === 'TABLET' ? 'TABLET' : 'QR',
       paymentMethod: payments[Math.floor(Math.random() * payments.length)],
-      amount: item.price * qty,
-      items: [{ menuName: item.name, optionNames: [], quantity: qty }],
+      amount: amount,
+      items: lines,
       customerContact: phones[Math.floor(Math.random() * phones.length)],
       orderedAt: new Date().toISOString(), acceptedAt: null, doneAt: null,
       status: 'WAITING', called: false, calledCount: 0, completeCount: 0,
