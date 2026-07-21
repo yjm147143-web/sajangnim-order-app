@@ -88,6 +88,23 @@
     return store;
   }
 
+  // 최소 주문 금액: 매장 전체 공통 1개 값. OFF면 금액 제한 없이 주문 가능.
+  function getMinOrderSettings(storeId) {
+    const store = findStore(storeId);
+    return {
+      enabled: !!store.minOrderAmountEnabled,
+      amount: store.minOrderAmount != null ? store.minOrderAmount : 10000,
+    };
+  }
+
+  function updateMinOrderSettings(storeId, opts) {
+    const store = findStore(storeId);
+    if (opts.enabled != null) store.minOrderAmountEnabled = opts.enabled;
+    if (opts.amount != null) store.minOrderAmount = opts.amount;
+    persist();
+    return getMinOrderSettings(storeId);
+  }
+
   // 마감 시 '처리중' 주문 전체를 완료 처리하고 매장을 마감 상태로 전환한다.
   function closeStoreAndCompleteProcessing(storeId) {
     const store = findStore(storeId);
@@ -671,6 +688,7 @@
     getCurrentUser: getCurrentUser, getAutoLogin: getAutoLogin, login: login, logout: logout,
     getStore: getStore, updateOperatingStatus: updateOperatingStatus, updateAutoAccept: updateAutoAccept,
     updateNotificationSettings: updateNotificationSettings,
+    getMinOrderSettings: getMinOrderSettings, updateMinOrderSettings: updateMinOrderSettings,
     closeStoreAndCompleteProcessing: closeStoreAndCompleteProcessing,
     getCustomerGuideSettings: getCustomerGuideSettings, updateCustomerGuideSettings: updateCustomerGuideSettings, getQrMenuInfo: getQrMenuInfo,
     getPermissionLockStatus: getPermissionLockStatus, setPermissionLockPassword: setPermissionLockPassword,

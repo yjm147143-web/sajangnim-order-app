@@ -75,6 +75,9 @@
       '<div class="settings-list-item" data-nav="menuManagement">' +
         '<div class="icon">🍽️</div><div class="label">메뉴 추가 및 수정</div><div class="chevron">›</div>' +
       '</div>' +
+      '<div class="settings-list-item" data-nav="orderManagement">' +
+        '<div class="icon">📦</div><div class="label">주문 관리</div><div class="chevron">›</div>' +
+      '</div>' +
       '<div class="settings-list-item" data-nav="customerGuideSettings">' +
         '<div class="icon">📢</div><div class="label">손님 안내 설정</div><div class="chevron">›</div>' +
       '</div>' +
