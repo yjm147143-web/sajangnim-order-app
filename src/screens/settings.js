@@ -30,6 +30,8 @@
 
   function contentHtml(store) {
     var autoAcceptOn = !!store.autoAcceptOrders;
+    var notificationOn = store.notificationEnabled !== false;
+    var volume = store.notificationVolume != null ? store.notificationVolume : 70;
     return (
       '<div class="settings-list-item no-toggle-click">' +
         '<div class="icon">🏪</div>' +
@@ -48,6 +50,25 @@
         '</div>' +
         '<button type="button" class="toggle' + (autoAcceptOn ? ' on' : '') + '" id="auto-accept-toggle"><span class="toggle-knob"></span></button>' +
       '</div>' +
+
+      '<div class="settings-list-item no-toggle-click">' +
+        '<div class="icon">🔔</div>' +
+        '<div class="label-group">' +
+          '<div class="label">알림 설정</div>' +
+          '<div class="label-sub">' + (notificationOn ? '소리 · 푸시 · 진동으로 새 주문을 알려드려요' : '소리 · 푸시 알림이 꺼져 있어요') + '</div>' +
+        '</div>' +
+        '<button type="button" class="toggle' + (notificationOn ? ' on' : '') + '" id="notification-toggle"><span class="toggle-knob"></span></button>' +
+      '</div>' +
+      (notificationOn ?
+        '<div class="notification-volume-row">' +
+          '<span class="notification-volume-label">알림음 크기</span>' +
+          '<input type="range" min="0" max="100" step="5" value="' + volume + '" id="notification-volume-slider" />' +
+          '<span class="notification-volume-value" id="notification-volume-value">' + volume + '</span>' +
+          '<button type="button" class="pill-btn" id="notification-preview-btn">🔊 미리듣기</button>' +
+        '</div>' +
+        (volume === 0 ? '<div class="notification-volume-hint">소리 크기가 0이라 진동으로만 알려드려요</div>' : '')
+        : ''
+      ) +
 
       '<div class="divider-line"></div>' +
 
@@ -88,6 +109,12 @@
         '.settings-list-item .chevron{color:var(--color-text-secondary);flex-shrink:0;font-size:20px;margin-left:auto;}' +
         '.settings-logout .label{color:var(--color-accent-red);}' +
         '.settings-logout .icon{filter:none;}' +
+        '.notification-volume-row{display:flex;align-items:center;gap:10px;padding:0 var(--space-5) var(--space-3) 48px;}' +
+        '.notification-volume-label{font-size:var(--font-size-caption);color:var(--color-text-secondary);font-weight:600;flex-shrink:0;white-space:nowrap;}' +
+        '.notification-volume-row input[type=range]{flex:1;accent-color:var(--color-text-primary);}' +
+        '.notification-volume-value{font-size:var(--font-size-caption);font-weight:700;width:28px;text-align:right;flex-shrink:0;}' +
+        '.notification-volume-row .pill-btn{flex-shrink:0;}' +
+        '.notification-volume-hint{font-size:var(--font-size-micro);color:var(--color-text-secondary);padding:0 var(--space-5) var(--space-3) 48px;}' +
       '</style>' +
       '<div class="topbar">' +
         '<div class="topbar-side"><button type="button" class="icon-btn" id="settings-back">←</button></div>' +
@@ -143,9 +170,45 @@
         autoToggle.addEventListener('click', function () {
           var store = window.MockApi.getStore(storeId);
           var next = !store.autoAcceptOrders;
-          window.MockApi.updateAutoAccept(storeId, next);
-          window.UI.toast(next ? '자동 수락을 켰어요' : '자동 수락을 껐어요');
+          var result = window.MockApi.updateAutoAccept(storeId, next);
+          if (next && result.autoAcceptedCount > 0) {
+            window.UI.toast('자동 수락을 켰어요 · 대기 중이던 ' + result.autoAcceptedCount + '건을 자동 수락했어요');
+          } else {
+            window.UI.toast(next ? '자동 수락을 켰어요' : '자동 수락을 껐어요');
+          }
           refresh();
+        });
+      }
+
+      var notificationToggle = wrap.querySelector('#notification-toggle');
+      if (notificationToggle) {
+        notificationToggle.addEventListener('click', function () {
+          var store = window.MockApi.getStore(storeId);
+          var next = !(store.notificationEnabled !== false);
+          window.MockApi.updateNotificationSettings(storeId, { enabled: next });
+          window.UI.toast(next ? '알림을 켰어요' : '알림을 껐어요');
+          refresh();
+        });
+      }
+
+      var volumeSlider = wrap.querySelector('#notification-volume-slider');
+      var volumeValue = wrap.querySelector('#notification-volume-value');
+      if (volumeSlider) {
+        volumeSlider.addEventListener('input', function () {
+          if (volumeValue) volumeValue.textContent = volumeSlider.value;
+        });
+        volumeSlider.addEventListener('change', function () {
+          var vol = Number(volumeSlider.value);
+          window.MockApi.updateNotificationSettings(storeId, { volume: vol });
+          window.UI.playNotificationPreview(vol);
+          refresh();
+        });
+      }
+      var previewBtn = wrap.querySelector('#notification-preview-btn');
+      if (previewBtn) {
+        previewBtn.addEventListener('click', function () {
+          var vol = volumeSlider ? Number(volumeSlider.value) : 0;
+          window.UI.playNotificationPreview(vol);
         });
       }
 

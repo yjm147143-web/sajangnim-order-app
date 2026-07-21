@@ -50,10 +50,14 @@
     return hm(start) + ' ~ ' + hm(end);
   }
 
+  // 예약 주문은 5분 단위 시간대 버킷 대신 별도의 '예약 시간' 그룹으로 묶는다.
   function groupByBucket(orders) {
+    const reserved = orders.filter(function (o) { return o.isReservation; });
+    const normal = orders.filter(function (o) { return !o.isReservation; });
+
     const groups = [];
     let current = null;
-    orders.forEach(function (o) {
+    normal.forEach(function (o) {
       const key = bucketKeyOf(o.orderedAt);
       if (!current || current.key !== key) {
         current = { key: key, label: bucketLabel(key), orders: [] };
@@ -61,6 +65,10 @@
       }
       current.orders.push(o);
     });
+
+    if (reserved.length) {
+      groups.push({ key: 'RESERVED', label: '예약 시간', isReservationGroup: true, orders: reserved });
+    }
     return groups;
   }
 
@@ -68,6 +76,10 @@
   function channelBadgeHtml(channel) {
     if (channel === 'QR') return '<span class="channel-badge channel-qr">🔳 QR오더</span>';
     return '<span class="channel-badge channel-tablet">🖥️ 태블릿오더</span>';
+  }
+
+  function reservationBadgeHtml() {
+    return '<span class="badge badge-reservation">📅 예약</span>';
   }
 
   function operatingStatusMeta(status) {
@@ -79,6 +91,29 @@
   function statusPillHtml(status) {
     const meta = operatingStatusMeta(status);
     return '<span class="status-pill ' + meta.cls + '">' + meta.dot + ' ' + meta.label + '</span>';
+  }
+
+  // ---------------- 알림음 미리듣기 ----------------
+  // 볼륨 0이면 소리 없이 진동만 동작(지원 기기 한정). 그 외엔 볼륨에 비례한 게인으로 짧은 알림음을 재생한다.
+  function playNotificationPreview(volume) {
+    if (!volume) {
+      if (navigator.vibrate) navigator.vibrate(120);
+      return;
+    }
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      const ctx = new Ctx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 880;
+      gain.gain.value = (volume / 100) * 0.25;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.18);
+      osc.onended = function () { ctx.close(); };
+    } catch (e) { /* 오디오 미지원 환경 무시 */ }
   }
 
   // ---------------- Toast ----------------
@@ -269,9 +304,10 @@
     escapeHtml: escapeHtml, formatMoney: formatMoney, clockLabel: clockLabel, elapsedLabel: elapsedLabel,
     isPhoneSuspicious: isPhoneSuspicious, formatContact: formatContact,
     bucketKeyOf: bucketKeyOf, bucketLabel: bucketLabel, groupByBucket: groupByBucket,
-    channelBadgeHtml: channelBadgeHtml, operatingStatusMeta: operatingStatusMeta, statusPillHtml: statusPillHtml,
+    channelBadgeHtml: channelBadgeHtml, reservationBadgeHtml: reservationBadgeHtml, operatingStatusMeta: operatingStatusMeta, statusPillHtml: statusPillHtml,
     toast: toast, showModal: showModal, closeModal: closeModal, confirmModal: confirmModal, showBottomSheet: showBottomSheet,
     requirePasswordGate: requirePasswordGate,
     barChartHtml: barChartHtml, donutChartHtml: donutChartHtml, rankListHtml: rankListHtml, salesChartHtml: salesChartHtml,
+    playNotificationPreview: playNotificationPreview,
   };
 })();

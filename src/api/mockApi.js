@@ -59,9 +59,31 @@
     return store;
   }
 
+  // 자동수락 ON: 신규 주문이 대기 단계 없이 바로 처리중으로 인입된다.
+  // (이 목업엔 실시간 신규 주문 유입이 없으므로, 켜는 시점에 이미 대기 중인 주문들을 즉시 자동 수락 처리해 그 효과를 보여준다.)
   function updateAutoAccept(storeId, enabled) {
     const store = findStore(storeId);
     store.autoAcceptOrders = enabled;
+    let autoAcceptedCount = 0;
+    if (enabled) {
+      DB.orders.forEach(function (o) {
+        if (o.storeId === storeId && o.status === 'WAITING') {
+          o.status = 'PROCESSING';
+          o.acceptedAt = new Date().toISOString();
+          autoAcceptedCount += 1;
+        }
+      });
+    }
+    persist();
+    return { store: store, autoAcceptedCount: autoAcceptedCount };
+  }
+
+  // 알림 설정: ON(디폴트)이면 소리·푸시·진동 모두 활성화, OFF면 소리·푸시 비활성화(진동만 남음).
+  // 볼륨이 0이면 소리는 나지 않고 진동만 동작한다.
+  function updateNotificationSettings(storeId, opts) {
+    const store = findStore(storeId);
+    if (opts.enabled != null) store.notificationEnabled = opts.enabled;
+    if (opts.volume != null) store.notificationVolume = opts.volume;
     persist();
     return store;
   }
@@ -567,6 +589,7 @@
   window.MockApi = {
     getCurrentUser: getCurrentUser, getAutoLogin: getAutoLogin, login: login, logout: logout,
     getStore: getStore, updateOperatingStatus: updateOperatingStatus, updateAutoAccept: updateAutoAccept,
+    updateNotificationSettings: updateNotificationSettings,
     closeStoreAndCompleteProcessing: closeStoreAndCompleteProcessing,
     getCustomerGuideSettings: getCustomerGuideSettings, updateCustomerGuideSettings: updateCustomerGuideSettings, getQrMenuInfo: getQrMenuInfo,
     getPermissionLockStatus: getPermissionLockStatus, setPermissionLockPassword: setPermissionLockPassword,

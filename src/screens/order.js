@@ -133,13 +133,15 @@
   }
 
   function renderOrderCard(order, tabStatus, disabled) {
-    const expanded = isBucketExpanded(window.UI.bucketKeyOf(order.orderedAt));
+    const bucketKey = order.isReservation ? 'RESERVED' : window.UI.bucketKeyOf(order.orderedAt);
+    const expanded = isBucketExpanded(bucketKey);
     const cls = 'order-card' + (order.canceled ? ' canceled' : '') + (order.called ? ' called' : '');
     let html = '<div class="' + cls + '">';
     const checkboxHtml = renderCheckboxHtml(order, tabStatus, disabled);
     const channelHtml = expanded ? window.UI.channelBadgeHtml(order.channel) : '';
-    if (checkboxHtml || channelHtml) {
-      html += '<div class="order-card-header-row">' + checkboxHtml + channelHtml + '</div>';
+    const reservationHtml = (expanded && order.isReservation) ? window.UI.reservationBadgeHtml() : '';
+    if (checkboxHtml || channelHtml || reservationHtml) {
+      html += '<div class="order-card-header-row">' + checkboxHtml + channelHtml + reservationHtml + '</div>';
     }
     if (expanded) {
       html += '<div class="order-card-payno-row">PG주문번호 ' + esc(order.paymentOrderNo) + '</div>';
@@ -149,7 +151,12 @@
       '<div class="order-card-pickup-block"><div class="pickup-label">픽업번호</div><div class="pickup-value">' + esc(order.pickupNo) + '</div></div>' +
       '</div>';
     // 전체 펼쳐보기/접기: 접었을 때도 대표주문메뉴·고객연락처·픽업번호·액션버튼·주문시간/경과시간은 노출한다
-    html += '<div class="order-card-time">' + window.UI.clockLabel(order.orderedAt) + ' 주문 (' + window.UI.elapsedLabel(order.orderedAt) + ')</div>';
+    // 예약 주문은 접수시간/경과시간 대신 예약 시각만 볼드로 노출한다
+    if (order.isReservation) {
+      html += '<div class="order-card-time reservation">' + window.UI.clockLabel(order.reservationTime || order.orderedAt) + ' 예약</div>';
+    } else {
+      html += '<div class="order-card-time">' + window.UI.clockLabel(order.orderedAt) + ' 주문 (' + window.UI.elapsedLabel(order.orderedAt) + ')</div>';
+    }
     const contact = window.UI.formatContact(order.customerContact);
     const suspicious = window.UI.isPhoneSuspicious(order.customerContact);
     html += '<div class="order-card-phone' + (suspicious ? ' suspicious' : '') + '">' + esc(contact) +
@@ -163,7 +170,9 @@
       html += '<div class="order-card-detail">' + order.items.map(function (it) {
         const optText = (it.optionNames && it.optionNames.length) ? ' <span class="opt">(' + it.optionNames.map(function (o) { return esc(o); }).join(', ') + ')</span>' : '';
         return '<div class="order-card-menu-line"><span>' + esc(it.menuName) + optText + '</span><span>' + it.quantity + '개</span></div>';
-      }).join('') + '</div>';
+      }).join('') +
+      (order.customerNote ? '<div class="order-card-note">💬 ' + esc(order.customerNote) + '</div>' : '') +
+      '</div>';
     }
     // 주문취소/결제취소/반품 처리된 완료 탭 건은 되돌리기·반품 버튼을 비활성화한다
     const actionsDisabled = disabled || (tabStatus === 'DONE' && order.canceled);
@@ -179,7 +188,7 @@
     return '<div class="bucket-header">' +
       '<div class="bucket-header-left">' +
       (showCheckbox ? '<input type="checkbox" data-action="bucket-select-all" data-bucket="' + group.key + '"' + (allSelected ? ' checked' : '') + (disabled ? ' disabled' : '') + ' />' : '') +
-      '<span class="bucket-label">' + group.label + ' (5분 단위)</span>' +
+      '<span class="bucket-label">' + group.label + (group.isReservationGroup ? '' : ' (5분 단위)') + '</span>' +
       '</div>' +
       '<div class="bucket-toggle-label" data-action="toggle-bucket-expand" data-bucket="' + group.key + '">' + (expanded ? '접기' : '펼쳐보기') + '</div>' +
       '</div>';
