@@ -110,6 +110,11 @@
       acceptReservationOrders: store.acceptReservationOrders !== false,
       acceptSeatOrders: store.acceptSeatOrders !== false,
       acceptCustomerNotes: store.acceptCustomerNotes !== false,
+      reservationHoursMode: store.reservationHoursMode === 'CUSTOM' ? 'CUSTOM' : 'OPERATING',
+      operatingHoursStart: store.operatingHoursStart || '09:00',
+      operatingHoursEnd: store.operatingHoursEnd || '21:00',
+      reservationCustomStart: store.reservationCustomStart || '09:00',
+      reservationCustomEnd: store.reservationCustomEnd || '21:00',
     };
   }
 
@@ -118,6 +123,11 @@
     if (opts.acceptReservationOrders != null) store.acceptReservationOrders = opts.acceptReservationOrders;
     if (opts.acceptSeatOrders != null) store.acceptSeatOrders = opts.acceptSeatOrders;
     if (opts.acceptCustomerNotes != null) store.acceptCustomerNotes = opts.acceptCustomerNotes;
+    if (opts.reservationHoursMode != null) store.reservationHoursMode = opts.reservationHoursMode;
+    if (opts.operatingHoursStart != null) store.operatingHoursStart = opts.operatingHoursStart;
+    if (opts.operatingHoursEnd != null) store.operatingHoursEnd = opts.operatingHoursEnd;
+    if (opts.reservationCustomStart != null) store.reservationCustomStart = opts.reservationCustomStart;
+    if (opts.reservationCustomEnd != null) store.reservationCustomEnd = opts.reservationCustomEnd;
     persist();
     return getOrderChannelSettings(storeId);
   }
