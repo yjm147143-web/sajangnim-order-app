@@ -29,7 +29,8 @@
     '.reason-pill-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }' +
     '.reason-textarea { margin-top: 4px; }' +
     '.order-list.with-bulk-bar { padding-bottom: 88px; }' +
-    '#bulk-bar-slot:empty { display: none; }';
+    '#bulk-bar-slot:empty { display: none; }' +
+    '.kitchen-board-pill { background: var(--color-accent-amber-bg); color: #a15c00; font-weight: 800; }';
 
   // ---------------- 탭 구성 ----------------
   // 자동수락 ON이면 신규 주문이 대기 없이 바로 처리중으로 인입되므로 대기 탭 자체를 숨긴다.
@@ -545,7 +546,6 @@
       '<div class="topbar-side">' + window.UI.statusPillHtml(store.operatingStatus) + '</div>' +
       '<div class="topbar-title">' + esc(store.name) + '</div>' +
       '<div class="topbar-side" style="justify-content:flex-end;">' +
-      '<button type="button" class="icon-btn" data-action="open-kitchen-board" aria-label="조리 현황판">🍳</button>' +
       '<button type="button" class="icon-btn" data-action="open-settings" aria-label="설정">⚙️</button>' +
       '</div>' +
       '</div>' +
@@ -561,6 +561,7 @@
       '<button type="button" class="pill-btn" id="sort-btn" data-action="toggle-sort">' + sortLabel() + ' ▾</button>' +
       '<button type="button" class="pill-btn' + (menuFilter ? ' active' : '') + '" id="menu-filter-btn" data-action="open-menu-filter">' + (menuFilter ? '메뉴 · ' + esc(menuFilter) : '메뉴 필터') + '</button>' +
       '<button type="button" class="pill-btn" id="expand-all-toggle" data-action="toggle-expand-all">' + (expandedAll ? '간단히 보기' : '펼쳐보기') + '</button>' +
+      '<button type="button" class="pill-btn kitchen-board-pill" data-action="open-kitchen-board">🍳 조리 현황판</button>' +
       '</div>' +
       '</div>' +
       '</div>' +
