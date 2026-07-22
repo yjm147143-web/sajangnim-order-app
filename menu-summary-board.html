@@ -4,210 +4,121 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>메뉴별 집계 현황판 (별도 목업)</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css" />
+<link rel="stylesheet" href="src/styles/tokens.css" />
+<link rel="stylesheet" href="src/styles/components.css" />
 <style>
-  :root {
-    --bg: #0a0b0d;
-    --bg-grid: #101216;
-    --panel: #15171c;
-    --panel-raised: #1b1e24;
-    --line: #262931;
-    --line-soft: #1e2127;
-    --ink: #eef0f2;
-    --ink-dim: #7d838f;
-    --ink-faint: #4b5058;
-    --amber: #ff9d2f;
-    --amber-glow: rgba(255,157,47,.28);
-    --green: #33e08a;
-    --green-glow: rgba(51,224,138,.26);
-    --dev: #8b7bff;
-    --font-display: 'Bebas Neue', 'Arial Narrow', sans-serif;
-    --font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
-  }
-
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; }
-  body {
-    background: var(--bg);
-    color: var(--ink);
-    font-family: var(--font-mono);
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--color-bg);
+    color: var(--color-text-primary);
+    font-family: var(--font-family-base);
     -webkit-font-smoothing: antialiased;
-    min-height: 100vh;
-    background-image:
-      linear-gradient(var(--bg-grid) 1px, transparent 1px),
-      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
-    background-size: 28px 28px;
   }
+  .stage { max-width: 420px; margin: 0 auto; padding: 18px 16px 48px; }
 
-  /* atmosphere: soft glows anchored to the corners, plus a faint grain layer */
-  body::before {
-    content: '';
-    position: fixed; inset: 0; pointer-events: none; z-index: 0;
-    background:
-      radial-gradient(560px 320px at 8% -6%, var(--amber-glow), transparent 60%),
-      radial-gradient(520px 300px at 100% 8%, var(--green-glow), transparent 60%);
-    opacity: .5;
+  .proto-banner {
+    background: #15152b; color: #c9baff; font-size: 11px; font-weight: 700; line-height: 1.5;
+    border: 1px dashed #7c5cff; border-radius: 10px; padding: 9px 12px; margin-bottom: 16px;
+    opacity: 0; animation: fadeUp .4s .04s ease forwards;
   }
-  body::after {
-    content: '';
-    position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .05; mix-blend-mode: overlay;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  }
+  .proto-banner b { color: #fff; }
 
-  .stage { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 0 18px 56px; }
-
-  /* ---------- prototype tag ---------- */
-  .proto-tag {
-    display: flex; align-items: center; gap: 8px;
-    margin: 16px 0 18px; padding: 8px 12px;
-    border: 1px dashed var(--dev); border-radius: 8px;
-    color: #c3b8ff; background: rgba(139,123,255,.08);
-    font-size: 10.5px; font-weight: 500; letter-spacing: .02em; line-height: 1.5;
-    opacity: 0; animation: rise .5s .05s cubic-bezier(.2,.8,.2,1) forwards;
+  .board-top {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+    margin-bottom: 18px;
+    opacity: 0; animation: fadeUp .45s .1s ease forwards;
   }
-  .proto-tag b { color: var(--dev); font-weight: 700; }
-
-  /* ---------- header ---------- */
-  .head-row {
-    display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    margin-bottom: 4px;
-    opacity: 0; animation: rise .55s .12s cubic-bezier(.2,.8,.2,1) forwards;
-  }
-  .live-pill { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-dim); letter-spacing: .04em; }
-  .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 0 var(--green-glow); animation: pulse-dot 1.8s ease-out infinite; }
-  .clock { font-size: 11px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
-
-  .title-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin: 6px 0 20px; }
-  .title-block { min-width: 0; opacity: 0; animation: rise .6s .18s cubic-bezier(.2,.8,.2,1) forwards; }
-  .kicker { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 4px; }
-  .h1 {
-    font-family: var(--font-display);
-    font-size: 40px; line-height: .92; letter-spacing: .01em;
-    color: var(--ink);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .store-line { font-size: 12px; color: var(--ink-dim); margin-top: 6px; }
+  .board-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--color-text-secondary); margin-bottom: 3px; }
+  .board-title { font-size: 21px; font-weight: 800; letter-spacing: -0.3px; }
+  .board-sub { font-size: var(--font-size-caption); color: var(--color-text-secondary); margin-top: 4px; }
 
   .refresh-btn {
-    flex-shrink: 0; width: 42px; height: 42px; border-radius: 50%;
-    background: var(--panel-raised); border: 1px solid var(--line); color: var(--ink);
-    font-size: 17px; cursor: pointer;
+    flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%;
+    background: var(--color-divider); border: none; color: var(--color-text-primary);
+    font-size: 16px; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    opacity: 0; animation: rise .6s .22s cubic-bezier(.2,.8,.2,1) forwards;
-    transition: border-color .2s, transform .15s;
+    transition: background .15s, transform .12s;
   }
-  .refresh-btn:active { transform: scale(.9); border-color: var(--amber); }
-  .refresh-btn.spin svg { animation: spin .5s linear; }
+  .refresh-btn:active { transform: scale(.92); background: var(--color-disabled); }
+  .refresh-btn.spin svg { animation: spin .5s ease; }
 
-  /* ---------- summary strip (sticky) ---------- */
-  .sticky-zone {
-    position: sticky; top: 0; z-index: 4;
-    padding-top: 14px; margin-top: -14px;
-    background: linear-gradient(var(--bg) 82%, transparent);
+  /* ---------- 상단 집계 요약 (기존 있던 비율선 유지: 카드별 called/remaining 바) ---------- */
+  .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 22px; }
+  .stat-card {
+    background: var(--color-white); border: 1px solid var(--color-divider); border-radius: var(--radius-card);
+    padding: 14px 6px; text-align: center;
+    opacity: 0; animation: fadeUp .4s ease forwards;
   }
-  .stat-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; margin-bottom: 26px; }
-  .stat-cell {
-    background: var(--panel); padding: 16px 10px 14px; text-align: center; position: relative;
-    opacity: 0; animation: rise .55s cubic-bezier(.2,.8,.2,1) forwards;
-  }
-  .stat-cell:nth-child(1) { animation-delay: .26s; }
-  .stat-cell:nth-child(2) { animation-delay: .32s; }
-  .stat-cell:nth-child(3) { animation-delay: .38s; }
-  .stat-num { font-family: var(--font-display); font-size: 34px; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
-  .stat-cell.called .stat-num { color: var(--green); text-shadow: 0 0 22px var(--green-glow); }
-  .stat-cell.remaining .stat-num { color: var(--amber); text-shadow: 0 0 22px var(--amber-glow); }
-  .stat-label { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); margin-top: 6px; font-weight: 500; }
+  .stat-card:nth-child(1) { animation-delay: .16s; }
+  .stat-card:nth-child(2) { animation-delay: .2s; }
+  .stat-card:nth-child(3) { animation-delay: .24s; }
+  .stat-num { font-size: 22px; font-weight: 800; letter-spacing: -0.3px; font-variant-numeric: tabular-nums; }
+  .stat-card.called .stat-num { color: var(--color-accent-green); }
+  .stat-card.remaining .stat-num { color: #a15c00; }
+  .stat-label { font-size: 11px; color: var(--color-text-secondary); margin-top: 4px; font-weight: 600; }
 
-  /* ---------- category ---------- */
-  .cat-title {
-    display: flex; align-items: center; gap: 10px;
-    font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-faint);
-    margin: 26px 2px 10px;
-  }
+  .cat-title { font-size: var(--font-size-subtitle); font-weight: 800; margin: 22px 2px 10px; }
   .cat-title:first-of-type { margin-top: 0; }
-  .cat-title::after { content: ''; flex: 1; height: 1px; background: var(--line-soft); }
 
-  /* ---------- menu rows ---------- */
-  .menu-list { display: flex; flex-direction: column; gap: 10px; }
-  .menu-row {
-    background: var(--panel);
-    border: 1px solid var(--line-soft);
-    border-left: 3px solid var(--amber);
-    border-radius: 12px;
-    padding: 14px 16px 13px;
-    opacity: 0; transform: translateY(10px);
-    animation: rise .5s cubic-bezier(.2,.8,.2,1) forwards;
-    animation-delay: calc(.42s + var(--i, 0) * 45ms);
+  /* ---------- 메뉴 카드: 2열 그리드 (모바일 폭에 맞춤) ---------- */
+  .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .menu-card {
+    background: var(--color-white); border: 1px solid var(--color-divider); border-radius: 16px;
+    padding: 13px 14px; display: flex; flex-direction: column; gap: 9px;
+    opacity: 0; transform: translateY(8px);
+    animation: fadeUp .4s ease forwards;
+    animation-delay: calc(.3s + var(--i, 0) * 35ms);
   }
-  .menu-row.cleared { border-left-color: var(--green); }
-  .menu-row.done { opacity: .5 !important; }
-  .menu-row.done .pip { background: var(--green) !important; box-shadow: none !important; }
+  .menu-card.all-called { background: var(--color-divider); border-color: transparent; }
 
-  .menu-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
-  .menu-name { font-size: 14.5px; font-weight: 600; letter-spacing: .01em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .menu-total { font-family: var(--font-display); font-size: 22px; color: var(--ink); flex-shrink: 0; font-variant-numeric: tabular-nums; }
-  .menu-total span { font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-faint); margin-left: 3px; letter-spacing: .05em; }
-
-  .pip-row { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
-  .pip {
-    width: 15px; height: 15px; border-radius: 4px;
-    background: var(--line-soft);
-    transform: scale(0);
-    animation: pip-in .3s cubic-bezier(.3,1.6,.5,1) forwards;
-    animation-delay: calc(.55s + var(--i, 0) * 45ms + var(--pi, 0) * 20ms);
+  .menu-card-name {
+    font-size: 12.5px; font-weight: 700; color: var(--color-text-secondary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .pip.on { background: var(--green); box-shadow: 0 0 8px var(--green-glow); }
-  .pip.off { background: transparent; border: 1.5px solid var(--amber); animation-name: pip-in, pip-wait; animation-duration: .3s, 1.6s; animation-delay: calc(.55s + var(--i, 0) * 45ms + var(--pi, 0) * 20ms), calc(.55s + var(--i, 0) * 45ms + var(--pi, 0) * 20ms + .3s); animation-iteration-count: 1, infinite; animation-timing-function: cubic-bezier(.3,1.6,.5,1), ease-in-out; }
+  .menu-card-total { font-size: 23px; font-weight: 800; letter-spacing: -0.3px; font-variant-numeric: tabular-nums; }
+  .menu-card-total .unit { font-size: 11px; font-weight: 600; color: var(--color-text-secondary); margin-left: 2px; }
+  .menu-card.all-called .menu-card-total { color: var(--color-text-secondary); }
 
-  .menu-legend { display: flex; justify-content: space-between; font-size: 11.5px; letter-spacing: .02em; }
-  .l-called { color: var(--green); font-weight: 600; }
-  .l-remaining { color: var(--amber); font-weight: 600; }
-  .l-done-tag { color: var(--green); font-weight: 600; }
+  /* 기존 목업에 있던 '주문 현황 비율 선' — 호출완료/남음 비율을 그대로 유지 */
+  .ratio-bar { height: 6px; background: var(--color-disabled); border-radius: 999px; overflow: hidden; display: flex; }
+  .ratio-bar .fill-called { background: var(--color-accent-green); height: 100%; }
+  .ratio-bar .fill-remaining { background: var(--color-accent-amber); height: 100%; }
 
-  /* ---------- empty ---------- */
+  .menu-card-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+  .tag { display: inline-flex; align-items: center; gap: 3px; padding: 3px 7px; border-radius: 999px; font-size: 10.5px; font-weight: 700; white-space: nowrap; }
+  .tag-called { background: var(--color-accent-green-bg); color: var(--color-accent-green); }
+  .tag-remaining { background: var(--color-accent-amber-bg); color: #a15c00; }
+  .tag-done { background: var(--color-text-primary); color: var(--color-white); }
+
   .empty {
-    text-align: center; padding: 64px 20px; color: var(--ink-dim);
-    background: var(--panel); border: 1px solid var(--line-soft); border-radius: 14px;
+    text-align: center; padding: 56px 20px; color: var(--color-text-secondary);
+    background: var(--color-white); border: 1px solid var(--color-divider); border-radius: var(--radius-card);
   }
-  .empty .emoji { font-size: 34px; margin-bottom: 10px; opacity: .7; }
+  .empty .emoji { font-size: 34px; margin-bottom: 8px; }
 
-  /* ---------- keyframes ---------- */
-  @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes pip-in { from { transform: scale(0); } to { transform: scale(1); } }
-  @keyframes pip-wait { 0%, 100% { box-shadow: 0 0 0 0 var(--amber-glow); } 50% { box-shadow: 0 0 8px 2px var(--amber-glow); } }
-  @keyframes pulse-dot { 0% { box-shadow: 0 0 0 0 var(--green-glow); } 70% { box-shadow: 0 0 0 7px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes spin { from { transform: rotate(0); } to { transform: rotate(320deg); } }
-
-  @media (prefers-reduced-motion: reduce) {
-    * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
-  }
+  @media (prefers-reduced-motion: reduce) { * { animation-duration: .01ms !important; } }
 </style>
 </head>
 <body>
 <div class="stage">
-  <div class="proto-tag">🛠️ <b>PROTOTYPE</b> — 기존 사장님 주문접수앱과 연결되어 있지 않은 독립 목업입니다.</div>
+  <div class="proto-banner">🛠️ <b>별도 프로토타입</b> — 기존 사장님 주문접수앱과 연결되어 있지 않은 독립 목업입니다.</div>
 
-  <div class="head-row">
-    <div class="live-pill"><span class="live-dot"></span>LIVE COUNT</div>
-    <div class="clock" id="last-updated">--:--</div>
-  </div>
-
-  <div class="title-row">
-    <div class="title-block">
-      <div class="kicker">Kitchen Order Board</div>
-      <div class="h1">메뉴 현황판</div>
-      <div class="store-line" id="store-name-label">-</div>
+  <div class="board-top">
+    <div>
+      <div class="board-eyebrow">KITCHEN BOARD</div>
+      <div class="board-title">메뉴별 집계 현황판</div>
+      <div class="board-sub" id="store-name-label">-</div>
     </div>
     <button type="button" class="refresh-btn" id="refresh-btn" aria-label="새로고침">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M4 12a8 8 0 0 1 14.2-5M20 12a8 8 0 0 1-14.2 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M18 4v4h-4M6 20v-4h4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 12a8 8 0 0 1 14.2-5M20 12a8 8 0 0 1-14.2 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M18 4v4h-4M6 20v-4h4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
   </div>
 
-  <div class="sticky-zone">
-    <div class="stat-strip" id="summary-strip"></div>
-  </div>
+  <div class="stat-row" id="summary-strip"></div>
 
   <div id="board-body"></div>
 </div>
@@ -218,7 +129,6 @@
 <script>
 (function () {
   var STORE_ID = 'store-1';
-  var MAX_PIPS = 24;
 
   function esc(s) {
     var d = document.createElement('div');
@@ -244,38 +154,25 @@
     return stats;
   }
 
-  function statCellHtml(cls, num, label) {
-    return '<div class="stat-cell ' + cls + '"><div class="stat-num">' + num + '</div><div class="stat-label">' + label + '</div></div>';
+  function statCardHtml(cls, num, label) {
+    return '<div class="stat-card ' + cls + '"><div class="stat-num">' + num + '</div><div class="stat-label">' + label + '</div></div>';
   }
 
-  function pipRowHtml(total, called) {
-    var shown = Math.min(total, MAX_PIPS);
-    var calledShown = Math.min(called, shown);
-    var pips = '';
-    for (var i = 0; i < shown; i++) {
-      var on = i < calledShown;
-      pips += '<div class="pip ' + (on ? 'on' : 'off') + '" style="--pi:' + i + '"></div>';
-    }
-    var overflow = total - shown;
-    if (overflow > 0) pips += '<div class="pip-overflow" style="align-self:center;font-size:11px;color:var(--ink-faint);">+' + overflow + '</div>';
-    return '<div class="pip-row">' + pips + '</div>';
-  }
-
-  function menuRowHtml(name, total, called, idx) {
+  function menuCardHtml(name, total, called, idx) {
     var remaining = total - called;
     var done = remaining === 0;
+    var calledPct = total ? Math.round((called / total) * 100) : 0;
     return (
-      '<div class="menu-row' + (done ? ' cleared done' : '') + '" style="--i:' + idx + '">' +
-        '<div class="menu-top">' +
-          '<div class="menu-name">' + esc(name) + '</div>' +
-          '<div class="menu-total">' + total + '<span>EA</span></div>' +
+      '<div class="menu-card' + (done ? ' all-called' : '') + '" style="--i:' + idx + '">' +
+        '<div class="menu-card-name">' + esc(name) + '</div>' +
+        '<div class="menu-card-total">' + total + '<span class="unit">개</span></div>' +
+        '<div class="ratio-bar">' +
+          '<div class="fill-called" style="width:' + calledPct + '%"></div>' +
+          '<div class="fill-remaining" style="width:' + (100 - calledPct) + '%"></div>' +
         '</div>' +
-        pipRowHtml(total, called) +
-        '<div class="menu-legend">' +
-          (done
-            ? '<span class="l-done-tag">✓ 전체 호출 완료</span>'
-            : '<span class="l-called">● 호출 ' + called + '</span><span class="l-remaining">○ 대기 ' + remaining + '</span>')  +
-        '</div>' +
+        (done
+          ? '<div class="menu-card-tags"><span class="tag tag-done">✓ 호출 완료</span></div>'
+          : '<div class="menu-card-tags"><span class="tag tag-called">호출 ' + called + '</span><span class="tag tag-remaining">남음 ' + remaining + '</span></div>') +
       '</div>'
     );
   }
@@ -283,8 +180,6 @@
   function render() {
     var store = window.MockApi.getStore(STORE_ID);
     document.getElementById('store-name-label').textContent = store.name + ' · 오늘 집계';
-    document.getElementById('last-updated').textContent =
-      new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
 
     var stats = aggregateByMenu();
     var categories = window.MockApi.getCategories(STORE_ID);
@@ -297,9 +192,9 @@
     });
 
     document.getElementById('summary-strip').innerHTML =
-      statCellHtml('total', totalAll, '총 주문') +
-      statCellHtml('called', calledAll, '호출 완료') +
-      statCellHtml('remaining', totalAll - calledAll, '대기 중');
+      statCardHtml('total', totalAll, '총 주문') +
+      statCardHtml('called', calledAll, '호출 완료') +
+      statCardHtml('remaining', totalAll - calledAll, '남은 수량');
 
     var body = document.getElementById('board-body');
     if (!totalAll) {
@@ -313,10 +208,10 @@
       var itemsInCat = menuItems.filter(function (m) { return m.categoryId === cat.id && stats[m.name] && stats[m.name].total > 0; });
       if (!itemsInCat.length) return;
       html += '<div class="cat-title">' + esc(cat.name) + '</div>';
-      html += '<div class="menu-list">' +
+      html += '<div class="menu-grid">' +
         itemsInCat.map(function (m) {
           var s = stats[m.name];
-          return menuRowHtml(m.name, s.total, s.called, idx++);
+          return menuCardHtml(m.name, s.total, s.called, idx++);
         }).join('') +
         '</div>';
     });
@@ -325,8 +220,8 @@
     var uncategorized = Object.keys(stats).filter(function (name) { return categorizedNames.indexOf(name) === -1 && stats[name].total > 0; });
     if (uncategorized.length) {
       html += '<div class="cat-title">기타</div>';
-      html += '<div class="menu-list">' +
-        uncategorized.map(function (name) { return menuRowHtml(name, stats[name].total, stats[name].called, idx++); }).join('') +
+      html += '<div class="menu-grid">' +
+        uncategorized.map(function (name) { return menuCardHtml(name, stats[name].total, stats[name].called, idx++); }).join('') +
         '</div>';
     }
 
