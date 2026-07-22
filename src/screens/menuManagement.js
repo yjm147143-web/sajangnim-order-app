@@ -52,12 +52,14 @@
             (item.soldOut ? ' <span class="badge badge-danger-soft">품절</span>' : '') +
             (item.exposed === false ? ' <span class="badge badge-neutral">숨김</span>' : '') +
             (item.promoType ? ' ' + window.UI.promoBadgeHtml(item.promoType) : '') +
+            (item.happyHourEnabled ? ' ' + window.UI.promoBadgeHtml('HAPPY_HOUR') : '') +
+            (item.firstComeEnabled ? ' ' + window.UI.promoBadgeHtml('FIRST_COME') : '') +
           '</div>' +
           '<div class="menu-row-sub">' + esc(catName) + (item.description ? ' · ' + esc(item.description) : '') + '</div>' +
           '<div class="menu-row-price">' +
-            ((item.promoType === 'HAPPY_HOUR' || item.promoType === 'FIRST_COME') && item.promoPrice != null
-              ? '<span class="menu-row-price-original">' + money(item.price) + '</span> <span class="menu-row-price-promo">' + money(item.promoPrice) + '</span>'
-              : money(item.price)) +
+            money(item.price) +
+            (item.happyHourEnabled && item.happyHourPrice != null ? ' · <span class="menu-row-price-promo">해피아워 ' + money(item.happyHourPrice) + '</span>' : '') +
+            (item.firstComeEnabled && item.firstComePrice != null ? ' · <span class="menu-row-price-promo">선착순 ' + money(item.firstComePrice) + '</span>' : '') +
             ' · 준비량 ' + (item.stockQuantity != null ? item.stockQuantity + '개' : '-') +
           '</div>' +
         '</div>' +
@@ -180,7 +182,13 @@
         nutritionInfo: item.nutritionInfo || '',
         allergyInfo: item.allergyInfo || '',
         promoType: item.promoType || '',
-        promoPrice: item.promoPrice != null ? item.promoPrice : '',
+        happyHourEnabled: !!item.happyHourEnabled,
+        happyHourPrice: item.happyHourPrice != null ? item.happyHourPrice : '',
+        happyHourStart: item.happyHourStart || '15:00',
+        happyHourEnd: item.happyHourEnd || '17:00',
+        firstComeEnabled: !!item.firstComeEnabled,
+        firstComePrice: item.firstComePrice != null ? item.firstComePrice : '',
+        firstComeQty: item.firstComeQty != null ? item.firstComeQty : '',
         stockQuantity: item.stockQuantity != null ? item.stockQuantity : '',
         autoSoldoutEnabled: item.autoSoldoutEnabled !== false,
         exposed: item.exposed !== false,
@@ -203,7 +211,13 @@
       nutritionInfo: '',
       allergyInfo: '',
       promoType: '',
-      promoPrice: '',
+      happyHourEnabled: false,
+      happyHourPrice: '',
+      happyHourStart: '15:00',
+      happyHourEnd: '17:00',
+      firstComeEnabled: false,
+      firstComePrice: '',
+      firstComeQty: '',
       stockQuantity: '',
       autoSoldoutEnabled: true,
       exposed: true,
@@ -257,14 +271,24 @@
     var priceNum = Number(state.price) || 0;
     var previewSoldOut = (state.autoSoldoutEnabled && state.stockQuantity !== '' && Number(state.stockQuantity) <= 0) || !!state.soldOut;
     var classes = 'menu-preview-card' + (previewSoldOut ? ' menu-preview-soldout' : '') + (!state.exposed ? ' menu-edit-preview-hidden' : '');
-    var hasPromoPrice = (state.promoType === 'HAPPY_HOUR' || state.promoType === 'FIRST_COME') &&
-      state.promoPrice !== '' && !isNaN(Number(state.promoPrice)) && Number(state.promoPrice) > 0;
-    var priceHtml = hasPromoPrice
-      ? '<div class="menu-preview-price">' +
-          '<span class="menu-preview-price-original">' + money(priceNum) + '</span>' +
-          '<span class="menu-preview-price-promo">' + money(Number(state.promoPrice)) + '</span>' +
-        '</div>'
-      : '<div class="menu-preview-price">' + money(priceNum) + '</div>';
+
+    var hasHappyHour = state.happyHourEnabled && state.happyHourPrice !== '' && !isNaN(Number(state.happyHourPrice)) && Number(state.happyHourPrice) > 0;
+    var hasFirstCome = state.firstComeEnabled && state.firstComePrice !== '' && !isNaN(Number(state.firstComePrice)) && Number(state.firstComePrice) > 0;
+
+    var priceHtml = '<div class="menu-preview-price">' + money(priceNum) + '</div>';
+    if (hasHappyHour) {
+      priceHtml += '<div class="menu-preview-promo-row">' +
+        '<span class="menu-preview-price-promo">🔥 해피아워 ' + money(Number(state.happyHourPrice)) + '</span>' +
+        '<span class="menu-preview-promo-caption">' + esc(state.happyHourStart) + '~' + esc(state.happyHourEnd) + '</span>' +
+      '</div>';
+    }
+    if (hasFirstCome) {
+      priceHtml += '<div class="menu-preview-promo-row">' +
+        '<span class="menu-preview-price-promo">⚡ 선착순 ' + money(Number(state.firstComePrice)) + '</span>' +
+        (state.firstComeQty !== '' ? '<span class="menu-preview-promo-caption">' + esc(state.firstComeQty) + '개 한정</span>' : '') +
+      '</div>';
+    }
+
     return (
       '<div class="' + classes + '">' +
         '<div class="menu-preview-image">' + (state.imageUrl ? '<img src="' + esc(state.imageUrl) + '" alt="" />' : '이미지 없음') + '</div>' +
@@ -295,12 +319,26 @@
         return { field: 'stock', message: '준비량 미입력' };
       }
     }
-    if (state.promoType === 'HAPPY_HOUR' || state.promoType === 'FIRST_COME') {
-      if (state.promoPrice === '' || state.promoPrice === null || isNaN(Number(state.promoPrice)) || Number(state.promoPrice) <= 0) {
-        return { field: 'promoPrice', message: '프로모션 가격 미입력' };
+    if (state.happyHourEnabled) {
+      if (state.happyHourPrice === '' || state.happyHourPrice === null || isNaN(Number(state.happyHourPrice)) || Number(state.happyHourPrice) <= 0) {
+        return { field: 'happyHourPrice', message: '해피아워 가격 미입력' };
       }
-      if (Number(state.promoPrice) >= Number(state.price)) {
-        return { field: 'promoPrice', message: '프로모션 가격은 원래 가격보다 낮아야 해요' };
+      if (Number(state.happyHourPrice) >= Number(state.price)) {
+        return { field: 'happyHourPrice', message: '해피아워 가격은 정가보다 낮아야 해요' };
+      }
+      if (!state.happyHourStart || !state.happyHourEnd) {
+        return { field: 'happyHourPrice', message: '해피아워 시간을 설정해주세요' };
+      }
+    }
+    if (state.firstComeEnabled) {
+      if (state.firstComePrice === '' || state.firstComePrice === null || isNaN(Number(state.firstComePrice)) || Number(state.firstComePrice) <= 0) {
+        return { field: 'firstComePrice', message: '선착순 가격 미입력' };
+      }
+      if (Number(state.firstComePrice) >= Number(state.price)) {
+        return { field: 'firstComePrice', message: '선착순 가격은 정가보다 낮아야 해요' };
+      }
+      if (state.firstComeQty === '' || state.firstComeQty === null || isNaN(Number(state.firstComeQty)) || Number(state.firstComeQty) <= 0) {
+        return { field: 'firstComePrice', message: '선착순 수량 미입력' };
       }
     }
     return null;
@@ -342,8 +380,13 @@
       nutritionInfo: (state.nutritionInfo || '').trim(),
       allergyInfo: (state.allergyInfo || '').trim(),
       promoType: state.promoType || null,
-      promoPrice: (state.promoType === 'HAPPY_HOUR' || state.promoType === 'FIRST_COME') && state.promoPrice !== ''
-        ? Number(state.promoPrice) : null,
+      happyHourEnabled: !!state.happyHourEnabled,
+      happyHourPrice: state.happyHourEnabled && state.happyHourPrice !== '' ? Number(state.happyHourPrice) : null,
+      happyHourStart: state.happyHourEnabled ? state.happyHourStart : null,
+      happyHourEnd: state.happyHourEnabled ? state.happyHourEnd : null,
+      firstComeEnabled: !!state.firstComeEnabled,
+      firstComePrice: state.firstComeEnabled && state.firstComePrice !== '' ? Number(state.firstComePrice) : null,
+      firstComeQty: state.firstComeEnabled && state.firstComeQty !== '' ? Number(state.firstComeQty) : null,
       stockQuantity: state.stockQuantity === '' ? 0 : Number(state.stockQuantity),
       autoSoldoutEnabled: !!state.autoSoldoutEnabled,
       exposed: !!state.exposed,
@@ -382,6 +425,12 @@
         '.menu-image-upload-actions{display:flex;flex-direction:column;align-items:flex-start;gap:4px;}' +
         '.menu-image-upload-actions label.btn{cursor:pointer;}' +
         '.promo-pill-row{display:flex;gap:6px;flex-wrap:wrap;}' +
+        '.time-range-row{display:flex;align-items:center;gap:8px;}' +
+        '.time-range-row .input-field{flex:1;}' +
+        '.time-range-sep{color:var(--color-text-secondary);flex-shrink:0;}' +
+        '.info-memo{font-size:var(--font-size-caption);color:var(--color-text-secondary);background:var(--color-divider);' +
+          'border-left:3px solid var(--color-text-primary);border-radius:0 10px 10px 0;padding:10px 12px;line-height:1.55;margin-top:10px;}' +
+        '.promo-price-net{font-size:var(--font-size-caption);color:var(--color-text-secondary);margin-bottom:8px;}' +
       '</style>' +
       '<div class="topbar">' +
         '<div class="topbar-side"><button type="button" class="icon-btn" id="edit-back">←</button></div>' +
@@ -451,26 +500,59 @@
           '</div>' +
 
           '<div class="input-group">' +
-            '<div class="input-label">프로모션 (선택)</div>' +
+            '<div class="input-label">쿠폰 프로모션 (선택)</div>' +
             '<div class="promo-pill-row">' +
             [
               { v: '', label: '없음' },
               { v: 'GROUP_COUPON', label: '쿠폰(그룹)' },
               { v: 'STORE_COUPON', label: '쿠폰(매장)' },
-              { v: 'HAPPY_HOUR', label: '해피아워' },
-              { v: 'FIRST_COME', label: '선착순' },
             ].map(function (o) {
               return '<button type="button" class="pill-btn' + (state.promoType === o.v ? ' active' : '') + '" data-action="set-promo" data-value="' + o.v + '">' + o.label + '</button>';
             }).join('') +
             '</div>' +
-            '<span class="menu-edit-subcaption">이 메뉴가 포함된 주문 카드에 프로모션 뱃지로 노출돼요</span>' +
+            '<span class="menu-edit-subcaption">이 메뉴가 포함된 주문 카드에 쿠폰 뱃지로 노출돼요</span>' +
           '</div>' +
 
-          '<div class="input-group" id="promo-price-group"' + ((state.promoType === 'HAPPY_HOUR' || state.promoType === 'FIRST_COME') ? '' : ' style="display:none;"') + '>' +
-            '<div class="input-label">프로모션 가격</div>' +
-            '<input class="input-field" type="number" id="f-promo-price" placeholder="할인 적용 가격을 입력해주세요" value="' + (state.promoPrice === '' ? '' : state.promoPrice) + '" />' +
-            '<div class="input-error" id="err-promoPrice" style="display:none;"></div>' +
-            '<span class="menu-edit-subcaption">해피아워/선착순 조건에 해당할 때만 이 가격이 적용돼요</span>' +
+          '<div class="input-group">' +
+            '<div class="toggle-row">' +
+              '<div class="label-group" style="display:flex;flex-direction:column;">' +
+                '<span class="input-label" style="margin:0;">해피아워 가격 설정</span>' +
+                '<span class="menu-edit-subcaption">정해진 시간 동안만 할인 가격으로 판매해요</span>' +
+              '</div>' +
+              '<button type="button" class="toggle' + (state.happyHourEnabled ? ' on' : '') + '" id="toggle-happy-hour"><span class="toggle-knob"></span></button>' +
+            '</div>' +
+            '<div id="happy-hour-detail" style="margin-top:12px;' + (state.happyHourEnabled ? '' : 'display:none;') + '">' +
+              '<div class="promo-price-net">정가 ' + money(Number(state.price) || 0) + '</div>' +
+              '<div class="input-label">해피아워 가격</div>' +
+              '<input class="input-field" type="number" id="f-happy-price" placeholder="할인 적용 가격을 입력해주세요" value="' + (state.happyHourPrice === '' ? '' : state.happyHourPrice) + '" />' +
+              '<div class="input-error" id="err-happyHourPrice" style="display:none;"></div>' +
+              '<div class="input-label" style="margin-top:10px;">해피아워 시간</div>' +
+              '<div class="time-range-row">' +
+                '<input type="time" class="input-field" id="f-happy-start" value="' + esc(state.happyHourStart) + '" />' +
+                '<span class="time-range-sep">~</span>' +
+                '<input type="time" class="input-field" id="f-happy-end" value="' + esc(state.happyHourEnd) + '" />' +
+              '</div>' +
+              '<div class="info-memo">💡 설정한 시간 동안에는 정가 대신 이 가격이 자동으로 적용돼요.</div>' +
+            '</div>' +
+          '</div>' +
+
+          '<div class="input-group">' +
+            '<div class="toggle-row">' +
+              '<div class="label-group" style="display:flex;flex-direction:column;">' +
+                '<span class="input-label" style="margin:0;">선착순 가격 설정</span>' +
+                '<span class="menu-edit-subcaption">정해진 수량까지만 할인 가격으로 판매해요</span>' +
+              '</div>' +
+              '<button type="button" class="toggle' + (state.firstComeEnabled ? ' on' : '') + '" id="toggle-first-come"><span class="toggle-knob"></span></button>' +
+            '</div>' +
+            '<div id="first-come-detail" style="margin-top:12px;' + (state.firstComeEnabled ? '' : 'display:none;') + '">' +
+              '<div class="promo-price-net">정가 ' + money(Number(state.price) || 0) + '</div>' +
+              '<div class="input-label">선착순 가격</div>' +
+              '<input class="input-field" type="number" id="f-first-price" placeholder="할인 적용 가격을 입력해주세요" value="' + (state.firstComePrice === '' ? '' : state.firstComePrice) + '" />' +
+              '<div class="input-error" id="err-firstComePrice" style="display:none;"></div>' +
+              '<div class="input-label" style="margin-top:10px;">선착순 수량</div>' +
+              '<input class="input-field" type="number" id="f-first-qty" placeholder="예: 20" value="' + (state.firstComeQty === '' ? '' : state.firstComeQty) + '" />' +
+              '<div class="info-memo">💡 선착순 수량이 모두 팔리면 정가로 자동 전환돼요.</div>' +
+            '</div>' +
           '</div>' +
 
           '<div class="input-group">' +
@@ -529,10 +611,12 @@
 
     function updatePreview() {
       root.querySelector('#menu-preview-container').innerHTML = renderPreviewHtml(state);
+      var netPrice = money(Number(state.price) || 0);
+      root.querySelectorAll('.promo-price-net').forEach(function (el) { el.textContent = '정가 ' + netPrice; });
     }
 
     function clearErrors() {
-      ['name', 'category', 'price', 'stock', 'promoPrice', 'general'].forEach(function (key) {
+      ['name', 'category', 'price', 'stock', 'happyHourPrice', 'firstComePrice', 'general'].forEach(function (key) {
         var el = root.querySelector('#err-' + key);
         if (el) { el.style.display = 'none'; el.textContent = ''; }
       });
@@ -563,22 +647,50 @@
         root.querySelectorAll('[data-action="set-promo"]').forEach(function (b) {
           b.classList.toggle('active', b.getAttribute('data-value') === state.promoType);
         });
-        var showPromoPrice = state.promoType === 'HAPPY_HOUR' || state.promoType === 'FIRST_COME';
-        var promoPriceGroup = root.querySelector('#promo-price-group');
-        promoPriceGroup.style.display = showPromoPrice ? '' : 'none';
-        if (!showPromoPrice) {
-          state.promoPrice = '';
-          var pInput = root.querySelector('#f-promo-price');
-          if (pInput) pInput.value = '';
-        }
         updatePreview();
       });
     });
 
-    var promoPriceInput = root.querySelector('#f-promo-price');
-    if (promoPriceInput) {
-      promoPriceInput.addEventListener('input', function (e) { state.promoPrice = e.target.value; updatePreview(); });
-    }
+    var happyToggle = root.querySelector('#toggle-happy-hour');
+    var happyDetail = root.querySelector('#happy-hour-detail');
+    happyToggle.addEventListener('click', function () {
+      state.happyHourEnabled = !state.happyHourEnabled;
+      happyToggle.classList.toggle('on', state.happyHourEnabled);
+      happyDetail.style.display = state.happyHourEnabled ? '' : 'none';
+      if (!state.happyHourEnabled) {
+        state.happyHourPrice = '';
+        var hpInput = root.querySelector('#f-happy-price');
+        if (hpInput) hpInput.value = '';
+      }
+      updatePreview();
+    });
+    var happyPriceInput = root.querySelector('#f-happy-price');
+    if (happyPriceInput) happyPriceInput.addEventListener('input', function (e) { state.happyHourPrice = e.target.value; updatePreview(); });
+    var happyStartInput = root.querySelector('#f-happy-start');
+    if (happyStartInput) happyStartInput.addEventListener('input', function (e) { state.happyHourStart = e.target.value; updatePreview(); });
+    var happyEndInput = root.querySelector('#f-happy-end');
+    if (happyEndInput) happyEndInput.addEventListener('input', function (e) { state.happyHourEnd = e.target.value; updatePreview(); });
+
+    var firstToggle = root.querySelector('#toggle-first-come');
+    var firstDetail = root.querySelector('#first-come-detail');
+    firstToggle.addEventListener('click', function () {
+      state.firstComeEnabled = !state.firstComeEnabled;
+      firstToggle.classList.toggle('on', state.firstComeEnabled);
+      firstDetail.style.display = state.firstComeEnabled ? '' : 'none';
+      if (!state.firstComeEnabled) {
+        state.firstComePrice = '';
+        state.firstComeQty = '';
+        var fpInput = root.querySelector('#f-first-price');
+        if (fpInput) fpInput.value = '';
+        var fqInput = root.querySelector('#f-first-qty');
+        if (fqInput) fqInput.value = '';
+      }
+      updatePreview();
+    });
+    var firstPriceInput = root.querySelector('#f-first-price');
+    if (firstPriceInput) firstPriceInput.addEventListener('input', function (e) { state.firstComePrice = e.target.value; updatePreview(); });
+    var firstQtyInput = root.querySelector('#f-first-qty');
+    if (firstQtyInput) firstQtyInput.addEventListener('input', function (e) { state.firstComeQty = e.target.value; updatePreview(); });
 
     function updateImageUI() {
       root.querySelector('#menu-image-thumb').innerHTML = state.imageUrl
