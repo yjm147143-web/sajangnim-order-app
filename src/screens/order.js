@@ -467,6 +467,7 @@
     const action = target.getAttribute('data-action');
     const id = target.getAttribute('data-id');
     if (action === 'open-settings') onSettingsClick();
+    else if (action === 'open-kitchen-board') window.Router.showScreen('kitchenBoard');
     else if (action === 'switch-tab') switchTab(parseInt(target.getAttribute('data-tab-idx'), 10));
     else if (action === 'toggle-sort') toggleSort();
     else if (action === 'open-menu-filter') openMenuFilterSheet();
@@ -544,6 +545,7 @@
       '<div class="topbar-side">' + window.UI.statusPillHtml(store.operatingStatus) + '</div>' +
       '<div class="topbar-title">' + esc(store.name) + '</div>' +
       '<div class="topbar-side" style="justify-content:flex-end;">' +
+      '<button type="button" class="icon-btn" data-action="open-kitchen-board" aria-label="조리 현황판">🍳</button>' +
       '<button type="button" class="icon-btn" data-action="open-settings" aria-label="설정">⚙️</button>' +
       '</div>' +
       '</div>' +
