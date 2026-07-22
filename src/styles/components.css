@@ -495,7 +495,11 @@ select.input-field { appearance: none; background-image: url("data:image/svg+xml
 .menu-preview-body { padding: var(--space-4); display: flex; flex-direction: column; gap: 4px; }
 .menu-preview-name { font-size: var(--font-size-subtitle); font-weight: 800; }
 .menu-preview-desc { font-size: var(--font-size-caption); color: var(--color-text-secondary); }
-.menu-preview-price { font-size: var(--font-size-body); font-weight: 800; margin-top: 4px; }
+.menu-preview-price { font-size: var(--font-size-body); font-weight: 800; margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+.menu-preview-price-original { font-size: var(--font-size-caption); font-weight: 600; color: var(--color-text-secondary); text-decoration: line-through; }
+.menu-preview-price-promo { color: var(--color-accent-red); font-weight: 800; }
+.menu-row-price-original { text-decoration: line-through; color: var(--color-text-secondary); }
+.menu-row-price-promo { color: var(--color-accent-red); font-weight: 800; }
 .menu-preview-origin { font-size: var(--font-size-micro); color: var(--color-text-secondary); }
 .menu-preview-soldout { position: relative; }
 .menu-preview-soldout::after { content: '품절'; position: absolute; inset: 0; background: rgba(255,255,255,0.75); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: var(--font-size-title); }

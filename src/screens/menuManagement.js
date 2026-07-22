@@ -54,7 +54,12 @@
             (item.promoType ? ' ' + window.UI.promoBadgeHtml(item.promoType) : '') +
           '</div>' +
           '<div class="menu-row-sub">' + esc(catName) + (item.description ? ' · ' + esc(item.description) : '') + '</div>' +
-          '<div class="menu-row-price">' + money(item.price) + ' · 준비량 ' + (item.stockQuantity != null ? item.stockQuantity + '개' : '-') + '</div>' +
+          '<div class="menu-row-price">' +
+            ((item.promoType === 'HAPPY_HOUR' || item.promoType === 'FIRST_COME') && item.promoPrice != null
+              ? '<span class="menu-row-price-original">' + money(item.price) + '</span> <span class="menu-row-price-promo">' + money(item.promoPrice) + '</span>'
+              : money(item.price)) +
+            ' · 준비량 ' + (item.stockQuantity != null ? item.stockQuantity + '개' : '-') +
+          '</div>' +
         '</div>' +
         '<div class="menu-row-side">' +
           (isSpecific ?
@@ -175,6 +180,7 @@
         nutritionInfo: item.nutritionInfo || '',
         allergyInfo: item.allergyInfo || '',
         promoType: item.promoType || '',
+        promoPrice: item.promoPrice != null ? item.promoPrice : '',
         stockQuantity: item.stockQuantity != null ? item.stockQuantity : '',
         autoSoldoutEnabled: item.autoSoldoutEnabled !== false,
         exposed: item.exposed !== false,
@@ -197,6 +203,7 @@
       nutritionInfo: '',
       allergyInfo: '',
       promoType: '',
+      promoPrice: '',
       stockQuantity: '',
       autoSoldoutEnabled: true,
       exposed: true,
@@ -250,13 +257,21 @@
     var priceNum = Number(state.price) || 0;
     var previewSoldOut = (state.autoSoldoutEnabled && state.stockQuantity !== '' && Number(state.stockQuantity) <= 0) || !!state.soldOut;
     var classes = 'menu-preview-card' + (previewSoldOut ? ' menu-preview-soldout' : '') + (!state.exposed ? ' menu-edit-preview-hidden' : '');
+    var hasPromoPrice = (state.promoType === 'HAPPY_HOUR' || state.promoType === 'FIRST_COME') &&
+      state.promoPrice !== '' && !isNaN(Number(state.promoPrice)) && Number(state.promoPrice) > 0;
+    var priceHtml = hasPromoPrice
+      ? '<div class="menu-preview-price">' +
+          '<span class="menu-preview-price-original">' + money(priceNum) + '</span>' +
+          '<span class="menu-preview-price-promo">' + money(Number(state.promoPrice)) + '</span>' +
+        '</div>'
+      : '<div class="menu-preview-price">' + money(priceNum) + '</div>';
     return (
       '<div class="' + classes + '">' +
         '<div class="menu-preview-image">' + (state.imageUrl ? '<img src="' + esc(state.imageUrl) + '" alt="" />' : '이미지 없음') + '</div>' +
         '<div class="menu-preview-body">' +
           '<div class="menu-preview-name">' + esc(state.name || '메뉴명을 입력해주세요') + '</div>' +
           (state.description ? '<div class="menu-preview-desc">' + esc(state.description) + '</div>' : '') +
-          '<div class="menu-preview-price">' + money(priceNum) + '</div>' +
+          priceHtml +
           (state.origin ? '<div class="menu-preview-origin">원산지 · ' + esc(state.origin) + '</div>' : '') +
           (state.nutritionInfo ? '<div class="menu-preview-origin">영양정보 · ' + esc(state.nutritionInfo) + '</div>' : '') +
           (state.allergyInfo ? '<div class="menu-preview-origin">알레르기 정보 · ' + esc(state.allergyInfo) + '</div>' : '') +
@@ -278,6 +293,14 @@
     if (state.autoSoldoutEnabled) {
       if (state.stockQuantity === '' || state.stockQuantity === null || isNaN(Number(state.stockQuantity))) {
         return { field: 'stock', message: '준비량 미입력' };
+      }
+    }
+    if (state.promoType === 'HAPPY_HOUR' || state.promoType === 'FIRST_COME') {
+      if (state.promoPrice === '' || state.promoPrice === null || isNaN(Number(state.promoPrice)) || Number(state.promoPrice) <= 0) {
+        return { field: 'promoPrice', message: '프로모션 가격 미입력' };
+      }
+      if (Number(state.promoPrice) >= Number(state.price)) {
+        return { field: 'promoPrice', message: '프로모션 가격은 원래 가격보다 낮아야 해요' };
       }
     }
     return null;
@@ -319,6 +342,8 @@
       nutritionInfo: (state.nutritionInfo || '').trim(),
       allergyInfo: (state.allergyInfo || '').trim(),
       promoType: state.promoType || null,
+      promoPrice: (state.promoType === 'HAPPY_HOUR' || state.promoType === 'FIRST_COME') && state.promoPrice !== ''
+        ? Number(state.promoPrice) : null,
       stockQuantity: state.stockQuantity === '' ? 0 : Number(state.stockQuantity),
       autoSoldoutEnabled: !!state.autoSoldoutEnabled,
       exposed: !!state.exposed,
@@ -441,6 +466,13 @@
             '<span class="menu-edit-subcaption">이 메뉴가 포함된 주문 카드에 프로모션 뱃지로 노출돼요</span>' +
           '</div>' +
 
+          '<div class="input-group" id="promo-price-group"' + ((state.promoType === 'HAPPY_HOUR' || state.promoType === 'FIRST_COME') ? '' : ' style="display:none;"') + '>' +
+            '<div class="input-label">프로모션 가격</div>' +
+            '<input class="input-field" type="number" id="f-promo-price" placeholder="할인 적용 가격을 입력해주세요" value="' + (state.promoPrice === '' ? '' : state.promoPrice) + '" />' +
+            '<div class="input-error" id="err-promoPrice" style="display:none;"></div>' +
+            '<span class="menu-edit-subcaption">해피아워/선착순 조건에 해당할 때만 이 가격이 적용돼요</span>' +
+          '</div>' +
+
           '<div class="input-group">' +
             '<div class="toggle-row">' +
               '<div class="label-group" style="display:flex;flex-direction:column;">' +
@@ -500,7 +532,7 @@
     }
 
     function clearErrors() {
-      ['name', 'category', 'price', 'stock', 'general'].forEach(function (key) {
+      ['name', 'category', 'price', 'stock', 'promoPrice', 'general'].forEach(function (key) {
         var el = root.querySelector('#err-' + key);
         if (el) { el.style.display = 'none'; el.textContent = ''; }
       });
@@ -531,8 +563,22 @@
         root.querySelectorAll('[data-action="set-promo"]').forEach(function (b) {
           b.classList.toggle('active', b.getAttribute('data-value') === state.promoType);
         });
+        var showPromoPrice = state.promoType === 'HAPPY_HOUR' || state.promoType === 'FIRST_COME';
+        var promoPriceGroup = root.querySelector('#promo-price-group');
+        promoPriceGroup.style.display = showPromoPrice ? '' : 'none';
+        if (!showPromoPrice) {
+          state.promoPrice = '';
+          var pInput = root.querySelector('#f-promo-price');
+          if (pInput) pInput.value = '';
+        }
+        updatePreview();
       });
     });
+
+    var promoPriceInput = root.querySelector('#f-promo-price');
+    if (promoPriceInput) {
+      promoPriceInput.addEventListener('input', function (e) { state.promoPrice = e.target.value; updatePreview(); });
+    }
 
     function updateImageUI() {
       root.querySelector('#menu-image-thumb').innerHTML = state.imageUrl
