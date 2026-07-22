@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>메뉴별 집계 현황판 (별도 목업)</title>
+<link rel="stylesheet" href="src/styles/tokens.css" />
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: #eef0f2;
+    font-family: var(--font-family-base);
+    color: var(--color-text-primary);
+    -webkit-font-smoothing: antialiased;
+  }
+  .board-wrap { max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+
+  .board-banner {
+    background: #15152b; color: #c9baff; font-size: 12px; font-weight: 700;
+    border-radius: 12px; padding: 10px 16px; margin-bottom: 20px;
+    border: 1px dashed #7c5cff;
+  }
+
+  .board-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+  .board-title { font-size: 26px; font-weight: 900; letter-spacing: -0.5px; }
+  .board-sub { font-size: var(--font-size-caption); color: var(--color-text-secondary); margin-top: 4px; }
+  .board-meta { display: flex; gap: 10px; align-items: center; }
+  .board-meta span { font-size: 12px; color: var(--color-text-secondary); }
+  .refresh-btn {
+    background: var(--color-text-primary); color: #fff; border: none; border-radius: 999px;
+    padding: 10px 18px; font-size: 13px; font-weight: 700; cursor: pointer;
+  }
+  .refresh-btn:active { opacity: 0.85; }
+
+  .summary-strip { display: flex; gap: 14px; margin-bottom: 28px; flex-wrap: wrap; }
+  .summary-chip {
+    flex: 1; min-width: 140px; background: #fff; border-radius: var(--radius-card);
+    padding: 18px 20px; box-shadow: 0 1px 3px rgba(17,17,17,0.06);
+  }
+  .summary-chip .num { font-size: 30px; font-weight: 900; line-height: 1.1; }
+  .summary-chip .label { font-size: 13px; color: var(--color-text-secondary); margin-top: 6px; font-weight: 600; }
+  .summary-chip.called .num { color: var(--color-accent-green); }
+  .summary-chip.remaining .num { color: #c07a00; }
+
+  .category-title {
+    font-size: 15px; font-weight: 800; margin: 28px 0 12px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .category-title:first-of-type { margin-top: 0; }
+
+  .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+  .menu-card {
+    background: #fff; border-radius: 18px; padding: 18px 20px;
+    box-shadow: 0 1px 3px rgba(17,17,17,0.06);
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .menu-card-name { font-size: 15px; font-weight: 800; }
+  .menu-card-total { font-size: 34px; font-weight: 900; letter-spacing: -0.5px; }
+  .menu-card-total .unit { font-size: 13px; font-weight: 700; color: var(--color-text-secondary); margin-left: 4px; }
+  .menu-card-bar { height: 10px; background: var(--color-divider); border-radius: 999px; overflow: hidden; display: flex; }
+  .menu-card-bar .bar-called { background: var(--color-accent-green); height: 100%; }
+  .menu-card-bar .bar-remaining { background: var(--color-accent-amber); height: 100%; }
+  .menu-card-legend { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 700; }
+  .menu-card-legend .l-called { color: var(--color-accent-green); }
+  .menu-card-legend .l-remaining { color: #c07a00; }
+  .menu-card.all-called { opacity: 0.55; }
+
+  .board-empty {
+    text-align: center; padding: 60px 20px; color: var(--color-text-secondary);
+    background: #fff; border-radius: var(--radius-card);
+  }
+  .board-empty .emoji { font-size: 40px; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+<div class="board-wrap">
+  <div class="board-banner">🛠️ 별도 프로토타입 — 기존 사장님 주문접수앱과 연결되어 있지 않은 독립 목업입니다.</div>
+
+  <div class="board-header">
+    <div>
+      <div class="board-title">🍽️ 메뉴별 집계 현황판</div>
+      <div class="board-sub" id="store-name-label">-</div>
+    </div>
+    <div class="board-meta">
+      <span id="last-updated">-</span>
+      <button type="button" class="refresh-btn" id="refresh-btn">↻ 새로고침</button>
+    </div>
+  </div>
+
+  <div class="summary-strip" id="summary-strip"></div>
+
+  <div id="board-body"></div>
+</div>
+
+<script src="src/config.js"></script>
+<script src="src/data/mockData.js"></script>
+<script src="src/api/mockApi.js"></script>
+<script>
+(function () {
+  var STORE_ID = 'store-1';
+
+  function esc(s) {
+    var d = document.createElement('div');
+    d.textContent = s == null ? '' : String(s);
+    return d.innerHTML;
+  }
+
+  // 취소되지 않은 주문의 메뉴 라인을 메뉴명 기준으로 집계한다.
+  // - total: 오늘 들어온 전체 수량
+  // - called: '고객 호출'을 한 번이라도 한 주문에 속한 수량 (호출 이후엔 상태가 바뀌어도 유지됨)
+  // - remaining = total - called (아직 호출 전 = 대기/처리중 미호출)
+  function aggregateByMenu() {
+    var orders = window.MockApi.getOrders(STORE_ID, {}).filter(function (o) { return !o.canceled; });
+    var stats = {};
+    orders.forEach(function (o) {
+      var isCalled = !!o.called;
+      o.items.forEach(function (it) {
+        if (!stats[it.menuName]) stats[it.menuName] = { total: 0, called: 0 };
+        stats[it.menuName].total += it.quantity;
+        if (isCalled) stats[it.menuName].called += it.quantity;
+      });
+    });
+    return stats;
+  }
+
+  function summaryChipHtml(cls, num, label) {
+    return '<div class="summary-chip ' + cls + '"><div class="num">' + num + '</div><div class="label">' + label + '</div></div>';
+  }
+
+  function menuCardHtml(name, total, called) {
+    var remaining = total - called;
+    var calledPct = total ? Math.round((called / total) * 100) : 0;
+    return (
+      '<div class="menu-card' + (remaining === 0 ? ' all-called' : '') + '">' +
+        '<div class="menu-card-name">' + esc(name) + '</div>' +
+        '<div class="menu-card-total">' + total + '<span class="unit">개 주문</span></div>' +
+        '<div class="menu-card-bar">' +
+          '<div class="bar-called" style="width:' + calledPct + '%"></div>' +
+          '<div class="bar-remaining" style="width:' + (100 - calledPct) + '%"></div>' +
+        '</div>' +
+        '<div class="menu-card-legend">' +
+          '<span class="l-called">✅ 호출 ' + called + '개</span>' +
+          '<span class="l-remaining">⏳ 남음 ' + remaining + '개</span>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function render() {
+    var store = window.MockApi.getStore(STORE_ID);
+    document.getElementById('store-name-label').textContent = store.name + ' · 오늘 집계';
+    document.getElementById('last-updated').textContent =
+      '마지막 갱신 ' + new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+    var stats = aggregateByMenu();
+    var categories = window.MockApi.getCategories(STORE_ID);
+    var menuItems = window.MockApi.getMenuItems(STORE_ID);
+
+    var totalAll = 0, calledAll = 0;
+    Object.keys(stats).forEach(function (name) {
+      totalAll += stats[name].total;
+      calledAll += stats[name].called;
+    });
+
+    document.getElementById('summary-strip').innerHTML =
+      summaryChipHtml('total', totalAll, '총 주문 수량') +
+      summaryChipHtml('called', calledAll, '호출 완료') +
+      summaryChipHtml('remaining', totalAll - calledAll, '남은 수량');
+
+    var body = document.getElementById('board-body');
+    if (!totalAll) {
+      body.innerHTML = '<div class="board-empty"><div class="emoji">📭</div>오늘 집계된 주문이 없어요</div>';
+      return;
+    }
+
+    var html = '';
+    categories.forEach(function (cat) {
+      var itemsInCat = menuItems.filter(function (m) { return m.categoryId === cat.id && stats[m.name] && stats[m.name].total > 0; });
+      if (!itemsInCat.length) return;
+      html += '<div class="category-title">' + esc(cat.name) + '</div>';
+      html += '<div class="menu-grid">' +
+        itemsInCat.map(function (m) {
+          var s = stats[m.name];
+          return menuCardHtml(m.name, s.total, s.called);
+        }).join('') +
+        '</div>';
+    });
+
+    // 카테고리에 속하지 않았거나 삭제된 메뉴명으로 집계된 항목 (개발자 도구 테스트 주문 등) 을 위한 예비 섹션
+    var categorizedNames = menuItems.map(function (m) { return m.name; });
+    var uncategorized = Object.keys(stats).filter(function (name) { return categorizedNames.indexOf(name) === -1 && stats[name].total > 0; });
+    if (uncategorized.length) {
+      html += '<div class="category-title">기타</div>';
+      html += '<div class="menu-grid">' +
+        uncategorized.map(function (name) { return menuCardHtml(name, stats[name].total, stats[name].called); }).join('') +
+        '</div>';
+    }
+
+    body.innerHTML = html;
+  }
+
+  document.getElementById('refresh-btn').addEventListener('click', render);
+  render();
+})();
+</script>
+</body>
+</html>
