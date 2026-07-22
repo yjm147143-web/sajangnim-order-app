@@ -18,6 +18,12 @@
   }
   .stage { max-width: 420px; margin: 0 auto; padding: 18px 16px 48px; }
 
+  @media (min-width: 640px) {
+    .stage { max-width: 900px; padding: 24px 28px 56px; }
+    .menu-grid { grid-template-columns: repeat(4, 1fr) !important; }
+    .cat-title { margin-top: 26px !important; }
+  }
+
   .proto-banner {
     background: #15152b; color: #c9baff; font-size: 11px; font-weight: 700; line-height: 1.5;
     border: 1px dashed #7c5cff; border-radius: 10px; padding: 9px 12px; margin-bottom: 16px;
@@ -43,21 +49,6 @@
   }
   .refresh-btn:active { transform: scale(.92); background: var(--color-disabled); }
   .refresh-btn.spin svg { animation: spin .5s ease; }
-
-  /* ---------- 상단 집계 요약 (기존 있던 비율선 유지: 카드별 called/remaining 바) ---------- */
-  .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 22px; }
-  .stat-card {
-    background: var(--color-white); border: 1px solid var(--color-divider); border-radius: var(--radius-card);
-    padding: 14px 6px; text-align: center;
-    opacity: 0; animation: fadeUp .4s ease forwards;
-  }
-  .stat-card:nth-child(1) { animation-delay: .16s; }
-  .stat-card:nth-child(2) { animation-delay: .2s; }
-  .stat-card:nth-child(3) { animation-delay: .24s; }
-  .stat-num { font-size: 22px; font-weight: 800; letter-spacing: -0.3px; font-variant-numeric: tabular-nums; }
-  .stat-card.called .stat-num { color: var(--color-accent-green); }
-  .stat-card.remaining .stat-num { color: #a15c00; }
-  .stat-label { font-size: 11px; color: var(--color-text-secondary); margin-top: 4px; font-weight: 600; }
 
   .cat-title { font-size: var(--font-size-subtitle); font-weight: 800; margin: 22px 2px 10px; }
   .cat-title:first-of-type { margin-top: 0; }
@@ -118,8 +109,6 @@
     </button>
   </div>
 
-  <div class="stat-row" id="summary-strip"></div>
-
   <div id="board-body"></div>
 </div>
 
@@ -154,10 +143,6 @@
     return stats;
   }
 
-  function statCardHtml(cls, num, label) {
-    return '<div class="stat-card ' + cls + '"><div class="stat-num">' + num + '</div><div class="stat-label">' + label + '</div></div>';
-  }
-
   function menuCardHtml(name, total, called, idx) {
     var remaining = total - called;
     var done = remaining === 0;
@@ -185,16 +170,10 @@
     var categories = window.MockApi.getCategories(STORE_ID);
     var menuItems = window.MockApi.getMenuItems(STORE_ID);
 
-    var totalAll = 0, calledAll = 0;
+    var totalAll = 0;
     Object.keys(stats).forEach(function (name) {
       totalAll += stats[name].total;
-      calledAll += stats[name].called;
     });
-
-    document.getElementById('summary-strip').innerHTML =
-      statCardHtml('total', totalAll, '총 주문') +
-      statCardHtml('called', calledAll, '호출 완료') +
-      statCardHtml('remaining', totalAll - calledAll, '남은 수량');
 
     var body = document.getElementById('board-body');
     if (!totalAll) {
