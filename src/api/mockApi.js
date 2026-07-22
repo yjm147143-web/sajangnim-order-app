@@ -364,6 +364,10 @@
     let list = DB.orders.filter(function (o) { return o.storeId === storeId; });
     if (opts.status) list = list.filter(function (o) { return o.status === opts.status; });
     if (opts.menuFilter) list = list.filter(function (o) { return o.items.some(function (it) { return it.menuName === opts.menuFilter; }); });
+    if (opts.orderTypeFilter === 'RESERVATION') list = list.filter(function (o) { return !!o.isReservation; });
+    else if (opts.orderTypeFilter === 'DELIVERY') list = list.filter(function (o) { return o.identifierType === 'SEAT'; });
+    else if (opts.orderTypeFilter === 'CALLED') list = list.filter(function (o) { return !!o.called; });
+    else if (opts.orderTypeFilter === 'NOT_CALLED') list = list.filter(function (o) { return !o.called; });
     if (opts.search) {
       const q = opts.search.trim();
       list = list.filter(function (o) { return o.pickupNo.indexOf(q) !== -1; });
