@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>메뉴별 집계 현황판 (별도 목업)</title>
 <link rel="stylesheet" href="src/styles/tokens.css" />
 <style>
@@ -14,81 +14,89 @@
     color: var(--color-text-primary);
     -webkit-font-smoothing: antialiased;
   }
-  .board-wrap { max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+  .board-wrap { max-width: 480px; margin: 0 auto; padding: 0 16px 40px; }
 
   .board-banner {
-    background: #15152b; color: #c9baff; font-size: 12px; font-weight: 700;
-    border-radius: 12px; padding: 10px 16px; margin-bottom: 20px;
+    background: #15152b; color: #c9baff; font-size: 11.5px; font-weight: 700; line-height: 1.5;
+    border-radius: 10px; padding: 9px 12px; margin: 12px 0 14px;
     border: 1px dashed #7c5cff;
   }
 
-  .board-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
-  .board-title { font-size: 26px; font-weight: 900; letter-spacing: -0.5px; }
-  .board-sub { font-size: var(--font-size-caption); color: var(--color-text-secondary); margin-top: 4px; }
-  .board-meta { display: flex; gap: 10px; align-items: center; }
-  .board-meta span { font-size: 12px; color: var(--color-text-secondary); }
-  .refresh-btn {
-    background: var(--color-text-primary); color: #fff; border: none; border-radius: 999px;
-    padding: 10px 18px; font-size: 13px; font-weight: 700; cursor: pointer;
-  }
-  .refresh-btn:active { opacity: 0.85; }
+  .sticky-top { position: sticky; top: 0; background: #eef0f2; z-index: 5; padding-top: 4px; padding-bottom: 12px; }
 
-  .summary-strip { display: flex; gap: 14px; margin-bottom: 28px; flex-wrap: wrap; }
-  .summary-chip {
-    flex: 1; min-width: 140px; background: #fff; border-radius: var(--radius-card);
-    padding: 18px 20px; box-shadow: 0 1px 3px rgba(17,17,17,0.06);
+  .board-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+  .board-title-group { min-width: 0; }
+  .board-title { font-size: 19px; font-weight: 900; letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .board-sub { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
+  .board-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .board-meta span { font-size: 10.5px; color: var(--color-text-secondary); white-space: nowrap; }
+  .refresh-btn {
+    width: 34px; height: 34px; flex-shrink: 0;
+    background: var(--color-text-primary); color: #fff; border: none; border-radius: 50%;
+    font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
   }
-  .summary-chip .num { font-size: 30px; font-weight: 900; line-height: 1.1; }
-  .summary-chip .label { font-size: 13px; color: var(--color-text-secondary); margin-top: 6px; font-weight: 600; }
+  .refresh-btn:active { opacity: 0.8; transform: scale(0.95); }
+
+  .summary-strip { display: flex; gap: 8px; }
+  .summary-chip {
+    flex: 1; min-width: 0; background: #fff; border-radius: 14px;
+    padding: 12px 8px; box-shadow: 0 1px 3px rgba(17,17,17,0.06);
+    text-align: center;
+  }
+  .summary-chip .num { font-size: 21px; font-weight: 900; line-height: 1.15; }
+  .summary-chip .label { font-size: 10.5px; color: var(--color-text-secondary); margin-top: 4px; font-weight: 600; white-space: nowrap; }
   .summary-chip.called .num { color: var(--color-accent-green); }
   .summary-chip.remaining .num { color: #c07a00; }
 
   .category-title {
-    font-size: 15px; font-weight: 800; margin: 28px 0 12px;
-    display: flex; align-items: center; gap: 6px;
+    font-size: 13.5px; font-weight: 800; color: var(--color-text-secondary);
+    margin: 18px 2px 8px;
   }
-  .category-title:first-of-type { margin-top: 0; }
+  .category-title:first-child { margin-top: 4px; }
 
-  .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+  .menu-list { display: flex; flex-direction: column; gap: 10px; }
   .menu-card {
-    background: #fff; border-radius: 18px; padding: 18px 20px;
+    background: #fff; border-radius: 16px; padding: 14px 16px;
     box-shadow: 0 1px 3px rgba(17,17,17,0.06);
-    display: flex; flex-direction: column; gap: 12px;
+    display: flex; flex-direction: column; gap: 9px;
   }
-  .menu-card-name { font-size: 15px; font-weight: 800; }
-  .menu-card-total { font-size: 34px; font-weight: 900; letter-spacing: -0.5px; }
-  .menu-card-total .unit { font-size: 13px; font-weight: 700; color: var(--color-text-secondary); margin-left: 4px; }
-  .menu-card-bar { height: 10px; background: var(--color-divider); border-radius: 999px; overflow: hidden; display: flex; }
+  .menu-card-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .menu-card-name { font-size: 15px; font-weight: 800; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .menu-card-total { font-size: 19px; font-weight: 900; flex-shrink: 0; }
+  .menu-card-total .unit { font-size: 11.5px; font-weight: 700; color: var(--color-text-secondary); margin-left: 2px; }
+  .menu-card-bar { height: 8px; background: var(--color-divider); border-radius: 999px; overflow: hidden; display: flex; }
   .menu-card-bar .bar-called { background: var(--color-accent-green); height: 100%; }
   .menu-card-bar .bar-remaining { background: var(--color-accent-amber); height: 100%; }
-  .menu-card-legend { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 700; }
+  .menu-card-legend { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; }
   .menu-card-legend .l-called { color: var(--color-accent-green); }
   .menu-card-legend .l-remaining { color: #c07a00; }
   .menu-card.all-called { opacity: 0.55; }
 
   .board-empty {
-    text-align: center; padding: 60px 20px; color: var(--color-text-secondary);
+    text-align: center; padding: 50px 20px; color: var(--color-text-secondary);
     background: #fff; border-radius: var(--radius-card);
   }
-  .board-empty .emoji { font-size: 40px; margin-bottom: 10px; }
+  .board-empty .emoji { font-size: 36px; margin-bottom: 8px; }
 </style>
 </head>
 <body>
 <div class="board-wrap">
   <div class="board-banner">🛠️ 별도 프로토타입 — 기존 사장님 주문접수앱과 연결되어 있지 않은 독립 목업입니다.</div>
 
-  <div class="board-header">
-    <div>
-      <div class="board-title">🍽️ 메뉴별 집계 현황판</div>
-      <div class="board-sub" id="store-name-label">-</div>
+  <div class="sticky-top">
+    <div class="board-header">
+      <div class="board-title-group">
+        <div class="board-title">🍽️ 메뉴별 집계 현황판</div>
+        <div class="board-sub" id="store-name-label">-</div>
+      </div>
+      <div class="board-meta">
+        <span id="last-updated">-</span>
+        <button type="button" class="refresh-btn" id="refresh-btn" aria-label="새로고침">↻</button>
+      </div>
     </div>
-    <div class="board-meta">
-      <span id="last-updated">-</span>
-      <button type="button" class="refresh-btn" id="refresh-btn">↻ 새로고침</button>
-    </div>
+    <div class="summary-strip" id="summary-strip"></div>
   </div>
-
-  <div class="summary-strip" id="summary-strip"></div>
 
   <div id="board-body"></div>
 </div>
@@ -133,8 +141,10 @@
     var calledPct = total ? Math.round((called / total) * 100) : 0;
     return (
       '<div class="menu-card' + (remaining === 0 ? ' all-called' : '') + '">' +
-        '<div class="menu-card-name">' + esc(name) + '</div>' +
-        '<div class="menu-card-total">' + total + '<span class="unit">개 주문</span></div>' +
+        '<div class="menu-card-top">' +
+          '<div class="menu-card-name">' + esc(name) + '</div>' +
+          '<div class="menu-card-total">' + total + '<span class="unit">개</span></div>' +
+        '</div>' +
         '<div class="menu-card-bar">' +
           '<div class="bar-called" style="width:' + calledPct + '%"></div>' +
           '<div class="bar-remaining" style="width:' + (100 - calledPct) + '%"></div>' +
@@ -151,7 +161,7 @@
     var store = window.MockApi.getStore(STORE_ID);
     document.getElementById('store-name-label').textContent = store.name + ' · 오늘 집계';
     document.getElementById('last-updated').textContent =
-      '마지막 갱신 ' + new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+      new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) + ' 갱신';
 
     var stats = aggregateByMenu();
     var categories = window.MockApi.getCategories(STORE_ID);
@@ -164,9 +174,9 @@
     });
 
     document.getElementById('summary-strip').innerHTML =
-      summaryChipHtml('total', totalAll, '총 주문 수량') +
+      summaryChipHtml('total', totalAll, '총 주문') +
       summaryChipHtml('called', calledAll, '호출 완료') +
-      summaryChipHtml('remaining', totalAll - calledAll, '남은 수량');
+      summaryChipHtml('remaining', totalAll - calledAll, '남음');
 
     var body = document.getElementById('board-body');
     if (!totalAll) {
@@ -179,7 +189,7 @@
       var itemsInCat = menuItems.filter(function (m) { return m.categoryId === cat.id && stats[m.name] && stats[m.name].total > 0; });
       if (!itemsInCat.length) return;
       html += '<div class="category-title">' + esc(cat.name) + '</div>';
-      html += '<div class="menu-grid">' +
+      html += '<div class="menu-list">' +
         itemsInCat.map(function (m) {
           var s = stats[m.name];
           return menuCardHtml(m.name, s.total, s.called);
@@ -192,7 +202,7 @@
     var uncategorized = Object.keys(stats).filter(function (name) { return categorizedNames.indexOf(name) === -1 && stats[name].total > 0; });
     if (uncategorized.length) {
       html += '<div class="category-title">기타</div>';
-      html += '<div class="menu-grid">' +
+      html += '<div class="menu-list">' +
         uncategorized.map(function (name) { return menuCardHtml(name, stats[name].total, stats[name].called); }).join('') +
         '</div>';
     }
