@@ -92,7 +92,7 @@
   // 메뉴명·수량·옵션 전체 목록 — '간단히 보기' 상태에서도 항상 노출된다
   function itemListHtml(order) {
     return (order.items || []).map(function (it) {
-      const menuLine = '<div class="order-card-menu-line"><span>' + esc(it.menuName) + '</span><span>' + it.quantity + '개</span></div>';
+      const menuLine = '<div class="order-card-menu-line"><span class="line-name">' + esc(it.menuName) + '</span><span class="line-leader"></span><span class="line-qty">' + it.quantity + '개</span></div>';
       const optLine = (it.optionNames && it.optionNames.length)
         ? '<div class="order-card-option-line">ㄴ ' + it.optionNames.map(function (o) { return esc(o); }).join(', ') + '</div>'
         : '';

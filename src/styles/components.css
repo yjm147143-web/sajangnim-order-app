@@ -358,30 +358,64 @@ select.input-field { appearance: none; background-image: url("data:image/svg+xml
 .section-caption { font-size: var(--font-size-caption); color: var(--color-text-secondary); padding: 0 var(--space-5) var(--space-2); }
 .divider-line { height: 8px; background: #eef0f2; margin: var(--space-2) 0; }
 
-/* ---------- Order Card ---------- */
+/* ---------- Order Card ("주문 티켓" — 접수 즉시 뜯어내는 주문서 스텁) ---------- */
 .order-list { padding: 0 var(--space-5) var(--space-5); }
 .order-card {
-  background: var(--color-divider);
-  border: 1px solid var(--color-divider);
-  border-radius: var(--radius-card);
+  position: relative;
+  background: var(--color-white);
+  border: 1.5px solid var(--color-text-primary);
+  border-left-width: 5px;
+  border-radius: 4px 16px 16px 4px;
   padding: var(--space-4) var(--space-5);
-  margin-bottom: var(--space-3);
+  margin-bottom: 26px;
+  box-shadow: 4px 4px 0 0 var(--color-text-primary);
 }
-.order-card.canceled { background: var(--color-accent-red-bg); border: 1.5px solid var(--color-accent-red); }
+.order-card.canceled { background: var(--color-accent-red-bg); border-color: var(--color-accent-red); box-shadow: 4px 4px 0 0 var(--color-accent-red); }
 
-.order-card-header-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; row-gap: 6px; margin-bottom: var(--space-3); }
+.order-card-header-row {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; row-gap: 6px;
+  padding-bottom: var(--space-3);
+  margin-bottom: var(--space-3);
+  border-bottom: 1.5px dashed var(--color-disabled);
+}
+.order-card-header-row .badge,
+.order-card-header-row .channel-badge {
+  border-radius: 4px;
+  font-family: var(--font-family-mono), var(--font-family-base);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-size: 10.5px;
+}
 .order-checkbox-label { display: flex; align-items: center; flex-shrink: 0; }
 .order-checkbox-label input { width: 20px; height: 20px; accent-color: var(--color-text-primary); cursor: pointer; }
-.order-card-payno-row { text-align: right; font-size: 11px; color: var(--color-text-secondary); margin-top: -4px; margin-bottom: var(--space-2); }
+.order-card-payno-row {
+  text-align: right; font-size: 11px; color: var(--color-text-secondary);
+  font-family: var(--font-family-mono), var(--font-family-base);
+  letter-spacing: 0.02em;
+  margin-top: -4px; margin-bottom: var(--space-3);
+}
 
-.order-card-pickup-row { display: flex; justify-content: flex-end; margin-bottom: var(--space-2); }
+.order-card-pickup-row { display: flex; justify-content: flex-end; margin-bottom: var(--space-3); }
 .order-card-pickup-block { flex-shrink: 0; text-align: right; }
-.pickup-label { font-size: 11px; color: var(--color-text-secondary); font-weight: 600; }
-.pickup-value { font-size: 20px; font-weight: 800; color: var(--color-text-primary); }
+.pickup-label { font-size: 10.5px; color: var(--color-text-secondary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+.pickup-value {
+  display: inline-block;
+  font-family: var(--font-family-mono), var(--font-family-base);
+  font-size: 25px; font-weight: 700; letter-spacing: 0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-white);
+  background: var(--color-text-primary);
+  padding: 3px 14px;
+  border-radius: 8px;
+}
+.order-card.canceled .pickup-value { background: var(--color-accent-red); }
 
-.order-card-items { background: var(--color-white); border-radius: var(--space-2); padding: var(--space-2) var(--space-3); margin-bottom: var(--space-2); }
+.order-card-items { background: var(--color-divider); border-radius: var(--space-2); padding: var(--space-3); margin-bottom: var(--space-3); }
 
-.order-card-time { font-size: var(--font-size-caption); color: var(--color-text-secondary); margin-bottom: var(--space-2); }
+.order-card-time {
+  font-size: var(--font-size-caption); color: var(--color-text-secondary); margin-bottom: var(--space-2);
+  font-family: var(--font-family-mono), var(--font-family-base);
+}
 .order-card-time.reservation { font-weight: 800; color: var(--color-text-primary); }
 .order-card-amount { font-size: var(--font-size-body); font-weight: 800; margin-bottom: var(--space-2); }
 .order-card-cancel-reason { font-size: var(--font-size-caption); color: var(--color-accent-red); font-weight: 700; margin-bottom: var(--space-2); }
@@ -391,14 +425,18 @@ select.input-field { appearance: none; background-image: url("data:image/svg+xml
   height: 32px; padding: 0 var(--space-3);
   border-radius: var(--radius-pill);
   background: var(--color-divider);
+  font-family: var(--font-family-mono), var(--font-family-base);
   font-size: var(--font-size-body); font-weight: 700;
   color: var(--color-text-primary);
   text-decoration: none;
 }
 .phone-btn:active { background: var(--color-disabled); }
-.order-card-detail { border-top: 1px dashed var(--color-disabled); margin-top: var(--space-3); padding-top: var(--space-3); }
-.order-card-menu-line { display: flex; justify-content: space-between; font-size: var(--font-size-body); font-weight: 600; margin-bottom: 4px; color: var(--color-text-primary); }
+.order-card-detail { border-top: 1.5px dashed var(--color-disabled); margin-top: var(--space-3); padding-top: var(--space-3); }
+.order-card-menu-line { display: flex; align-items: baseline; gap: 6px; font-size: var(--font-size-body); font-weight: 600; margin-bottom: 6px; color: var(--color-text-primary); }
 .order-card-menu-line:last-child { margin-bottom: 0; }
+.order-card-menu-line .line-name { flex: 0 1 auto; }
+.order-card-menu-line .line-leader { flex: 1 1 auto; min-width: 10px; border-bottom: 1.5px dotted var(--color-disabled); margin-bottom: 4px; }
+.order-card-menu-line .line-qty { flex-shrink: 0; font-family: var(--font-family-mono), var(--font-family-base); font-variant-numeric: tabular-nums; font-weight: 700; }
 .order-card-option-line { font-size: var(--font-size-caption); color: var(--color-text-secondary); padding-left: 10px; margin: -2px 0 6px; }
 .order-card-option-line:last-child { margin-bottom: 0; }
 .order-card-note { margin-top: var(--space-2); padding: var(--space-2) var(--space-3); background: var(--color-accent-amber-bg); border-radius: var(--space-2); font-size: var(--font-size-caption); color: #a15c00; font-weight: 600; }
