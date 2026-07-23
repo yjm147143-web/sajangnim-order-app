@@ -155,9 +155,6 @@
     if (checkboxHtml || channelHtml || reservationHtml || reusableHtml || promoHtml) {
       html += '<div class="order-card-header-row">' + checkboxHtml + channelHtml + reservationHtml + reusableHtml + promoHtml + '</div>';
     }
-    if (expanded) {
-      html += '<div class="order-card-payno-row">PG주문번호 ' + esc(order.paymentOrderNo) + '</div>';
-    }
     html += '<div class="order-card-pickup-row">' +
       '<div class="order-card-pickup-block"><div class="pickup-label">' + (order.identifierType === 'SEAT' ? '좌석번호' : '호출번호') + '</div><div class="pickup-value">' + esc(order.pickupNo) + '</div></div>' +
       '</div>';
@@ -183,6 +180,7 @@
     if (expanded) {
       html += '<div class="order-card-detail">' +
         '<div class="order-card-payment-row">결제수단 ' + esc(order.paymentMethod) + ' · ' + window.UI.formatMoney(order.amount) + '</div>' +
+        '<div class="order-card-payment-row">PG주문번호 ' + esc(order.paymentOrderNo) + '</div>' +
         (order.customerNote ? '<div class="order-card-note">💬 ' + esc(order.customerNote) + '</div>' : '') +
         '</div>';
     }
