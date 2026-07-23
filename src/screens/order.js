@@ -89,24 +89,6 @@
     updateList();
   }
 
-  // ---------------- 대표 메뉴 라벨 ----------------
-  function mainMenuLabel(order) {
-    const items = order.items || [];
-    if (!items.length) return '';
-    if (items.length === 1) {
-      const it = items[0];
-      return it.quantity > 1 ? (it.menuName + ' ' + it.quantity + '개') : it.menuName;
-    }
-    return items[0].menuName + ' 외 ' + (items.length - 1) + '건';
-  }
-
-  // 메뉴 종류 수 · 총 수량 요약 (예: "2종 3개")
-  function menuCountSummary(order) {
-    const items = order.items || [];
-    const totalQty = items.reduce(function (sum, it) { return sum + it.quantity; }, 0);
-    return items.length + '종 ' + totalQty + '개';
-  }
-
   // 메뉴명·수량·옵션 전체 목록 — '간단히 보기' 상태에서도 항상 노출된다
   function itemListHtml(order) {
     return (order.items || []).map(function (it) {
@@ -176,8 +158,7 @@
     if (expanded) {
       html += '<div class="order-card-payno-row">PG주문번호 ' + esc(order.paymentOrderNo) + '</div>';
     }
-    html += '<div class="order-card-content-row">' +
-      '<div class="order-card-menu-main">' + esc(mainMenuLabel(order)) + '<span class="order-card-menu-count">' + esc(menuCountSummary(order)) + '</span></div>' +
+    html += '<div class="order-card-pickup-row">' +
       '<div class="order-card-pickup-block"><div class="pickup-label">' + (order.identifierType === 'SEAT' ? '좌석번호' : '호출번호') + '</div><div class="pickup-value">' + esc(order.pickupNo) + '</div></div>' +
       '</div>';
     // 메뉴·옵션 전체 목록도 '간단히 보기'에서 항상 노출한다
