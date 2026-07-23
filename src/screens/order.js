@@ -169,12 +169,10 @@
       html += '<div class="order-card-time">' + window.UI.clockLabel(order.orderedAt) + ' 주문 (' + window.UI.elapsedLabel(order.orderedAt) + ')</div>';
     }
     const contact = window.UI.formatContact(order.customerContact);
-    const suspicious = window.UI.isPhoneSuspicious(order.customerContact);
     const isEmailContact = (order.customerContact || '').indexOf('@') !== -1;
-    const warningHtml = suspicious ? ' <span class="phone-warning-inline">⚠️오입력</span>' : '';
-    const phoneBtnHtml = '<a href="tel:' + esc(order.customerContact) + '" class="phone-btn' + (suspicious ? ' suspicious' : '') + '">📞 ' + esc(contact) + '</a>';
+    const phoneBtnHtml = '<a href="tel:' + esc(order.customerContact) + '" class="phone-btn">📞 ' + esc(contact) + '</a>';
     html += '<div class="order-card-phone">' +
-      (isEmailContact ? (esc(contact) + warningHtml) : (phoneBtnHtml + warningHtml)) +
+      (isEmailContact ? esc(contact) : phoneBtnHtml) +
       '</div>';
     if (order.canceled) {
       const typeLabel = order.cancelType === 'RETURN' ? '결제 취소' : (order.cancelType === 'PAYMENT_CANCEL' ? '결제취소' : '주문취소');
