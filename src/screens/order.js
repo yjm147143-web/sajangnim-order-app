@@ -155,17 +155,18 @@
     if (checkboxHtml || channelHtml || reservationHtml || reusableHtml || promoHtml) {
       html += '<div class="order-card-header-row">' + checkboxHtml + channelHtml + reservationHtml + reusableHtml + promoHtml + '</div>';
     }
-    html += '<div class="order-card-pickup-row">' +
+    // 호출번호/좌석번호는 메뉴 정보와 같은 행에 두어 한 시야에 파악되도록 한다
+    html += '<div class="order-card-content-row">' +
+      '<div class="order-card-items">' + itemListHtml(order) + '</div>' +
       '<div class="order-card-pickup-block"><div class="pickup-label">' + (order.identifierType === 'SEAT' ? '좌석번호' : '호출번호') + '</div><div class="pickup-value">' + esc(order.pickupNo) + '</div></div>' +
       '</div>';
-    // 메뉴·옵션 전체 목록도 '간단히 보기'에서 항상 노출한다
-    html += '<div class="order-card-items">' + itemListHtml(order) + '</div>';
     // 전체 펼쳐보기/접기: 접었을 때도 대표주문메뉴·고객연락처·픽업번호·액션버튼·주문시간/경과시간은 노출한다
     // 예약 주문은 접수시간/경과시간 대신 예약 시각만 볼드로 노출한다
+    // 주문시간·경과시간은 조리 우선순위 판단에 중요한 정보라 강조해서 보여준다
     if (order.isReservation) {
       html += '<div class="order-card-time reservation">' + window.UI.clockLabel(order.reservationTime || order.orderedAt) + ' 예약</div>';
     } else {
-      html += '<div class="order-card-time">' + window.UI.clockLabel(order.orderedAt) + ' 주문 (' + window.UI.elapsedLabel(order.orderedAt) + ')</div>';
+      html += '<div class="order-card-time">' + window.UI.clockLabel(order.orderedAt) + ' 주문 · <span class="elapsed-badge">' + window.UI.elapsedLabel(order.orderedAt) + '</span></div>';
     }
     const contact = window.UI.formatContact(order.customerContact);
     const isEmailContact = (order.customerContact || '').indexOf('@') !== -1;
